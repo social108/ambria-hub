@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { PAGES, STORAGE_KEYS } from "./lib/constants.js";
-import { EVENTS } from "./lib/events.js";
-import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder, uid, loadData, saveData } from "./lib/helpers.js";
+import { useState } from "react";
+import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder } from "./lib/helpers.js";
+import useEvents from "./hooks/useEvents.js";
+import useWorkflow from "./hooks/useWorkflow.js";
+import useAdRequests from "./hooks/useAdRequests.js";
+import useRealtimeSync from "./hooks/useRealtimeSync.js";
 import RemindersView from "./components/RemindersView.jsx";
 import CalendarView from "./components/CalendarView.jsx";
 import WorkflowView from "./components/WorkflowView.jsx";
@@ -10,138 +12,31 @@ import PagesView from "./components/PagesView.jsx";
 
 export default function AmbriaHub() {
   const [tab, setTab] = useState("reminders");
-  const [data, setData] = useState({ workflow: {}, adRequests: [], customEvents: [], builtinEdits: {}, hiddenBuiltins: [] });
-  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    const wf = loadData(STORAGE_KEYS.workflow) || {};
-    const ads = loadData(STORAGE_KEYS.adRequests) || [];
-    const ce = loadData(STORAGE_KEYS.customEvents) || [];
-    const be = loadData(STORAGE_KEYS.builtinEdits) || {};
-    const hb = loadData(STORAGE_KEYS.hiddenBuiltins) || [];
-    setData({ workflow: wf, adRequests: ads, customEvents: ce, builtinEdits: be, hiddenBuiltins: hb });
-    setLoaded(true);
-  }, []);
+  const {
+    allEvents, addEvent, updateEvent, deleteEvent,
+    restoreBuiltin, resetBuiltin, hiddenCount, hiddenBuiltins,
+    loading: eventsLoading, refetch: refetchEvents,
+  } = useEvents();
 
-  const updateWorkflow = useCallback((eventKey, pageId, field, value) => {
-    setData(prev => {
-      const wf = { ...prev.workflow };
-      if (!wf[eventKey]) wf[eventKey] = {};
-      if (!wf[eventKey][pageId]) wf[eventKey][pageId] = {};
-      wf[eventKey][pageId][field] = value;
-      saveData(STORAGE_KEYS.workflow, wf);
-      return { ...prev, workflow: wf };
-    });
-  }, []);
+  const {
+    workflowData, updateWorkflow,
+    loading: workflowLoading, refetch: refetchWorkflow,
+  } = useWorkflow();
 
-  // Custom events CRUD
-  const addEvent = useCallback((evt) => {
-    setData(prev => {
-      const ce = [...prev.customEvents, { ...evt, id: uid(), custom: true }];
-      saveData(STORAGE_KEYS.customEvents, ce);
-      return { ...prev, customEvents: ce };
-    });
-  }, []);
+  const {
+    adRequests, addAdRequest, updateAdRequest, deleteAdRequest,
+    loading: adsLoading, refetch: refetchAdRequests,
+  } = useAdRequests();
 
-  // Universal update — works for both custom and built-in
-  const updateEvent = useCallback((id, updates, isBuiltin) => {
-    if (isBuiltin) {
-      setData(prev => {
-        const be = { ...prev.builtinEdits, [id]: { ...(prev.builtinEdits[id] || {}), ...updates } };
-        saveData(STORAGE_KEYS.builtinEdits, be);
-        return { ...prev, builtinEdits: be };
-      });
-    } else {
-      setData(prev => {
-        const ce = prev.customEvents.map(e => e.id === id ? { ...e, ...updates } : e);
-        saveData(STORAGE_KEYS.customEvents, ce);
-        return { ...prev, customEvents: ce };
-      });
-    }
-  }, []);
+  useRealtimeSync({ refetchEvents, refetchWorkflow, refetchAdRequests });
 
-  // Universal delete — works for both custom and built-in
-  const deleteEvent = useCallback((id, isBuiltin) => {
-    if (isBuiltin) {
-      setData(prev => {
-        const hb = [...prev.hiddenBuiltins, id];
-        const be = { ...prev.builtinEdits };
-        delete be[id];
-        saveData(STORAGE_KEYS.hiddenBuiltins, hb);
-        saveData(STORAGE_KEYS.builtinEdits, be);
-        return { ...prev, hiddenBuiltins: hb, builtinEdits: be };
-      });
-    } else {
-      setData(prev => {
-        const ce = prev.customEvents.filter(e => e.id !== id);
-        saveData(STORAGE_KEYS.customEvents, ce);
-        return { ...prev, customEvents: ce };
-      });
-    }
-  }, []);
+  const loading = eventsLoading || workflowLoading || adsLoading;
 
-  // Restore a deleted built-in event
-  const restoreBuiltin = useCallback((id) => {
-    setData(prev => {
-      const hb = prev.hiddenBuiltins.filter(x => x !== id);
-      saveData(STORAGE_KEYS.hiddenBuiltins, hb);
-      return { ...prev, hiddenBuiltins: hb };
-    });
-  }, []);
+  // Build the data object that child components expect
+  const data = { workflow: workflowData, adRequests };
 
-  // Reset a built-in event to defaults
-  const resetBuiltin = useCallback((id) => {
-    setData(prev => {
-      const be = { ...prev.builtinEdits };
-      delete be[id];
-      saveData(STORAGE_KEYS.builtinEdits, be);
-      return { ...prev, builtinEdits: be };
-    });
-  }, []);
-
-  const addAdRequest = useCallback((req) => {
-    setData(prev => {
-      const ads = [...prev.adRequests, { ...req, id: uid(), createdAt: new Date().toISOString(), status: "requested" }];
-      saveData(STORAGE_KEYS.adRequests, ads);
-      return { ...prev, adRequests: ads };
-    });
-  }, []);
-
-  const updateAdRequest = useCallback((id, updates) => {
-    setData(prev => {
-      const ads = prev.adRequests.map(a => a.id === id ? { ...a, ...updates } : a);
-      saveData(STORAGE_KEYS.adRequests, ads);
-      return { ...prev, adRequests: ads };
-    });
-  }, []);
-
-  const deleteAdRequest = useCallback((id) => {
-    setData(prev => {
-      const ads = prev.adRequests.filter(a => a.id !== id);
-      saveData(STORAGE_KEYS.adRequests, ads);
-      return { ...prev, adRequests: ads };
-    });
-  }, []);
-
-  // Merge built-in EVENTS (with overrides applied, hidden ones removed) + customEvents
-  const allEvents = useMemo(() => {
-    const hiddenSet = new Set(data.hiddenBuiltins);
-    const builtIn = EVENTS
-      .map(e => {
-        const id = `builtin-${e.date}-${e.name}`;
-        if (hiddenSet.has(id)) return null;
-        const overrides = data.builtinEdits[id];
-        return { ...e, ...(overrides || {}), id, custom: false, edited: !!overrides };
-      })
-      .filter(Boolean);
-    const custom = data.customEvents.map(e => ({ ...e, custom: true }));
-    return [...builtIn, ...custom].sort((a,b) => a.date.localeCompare(b.date));
-  }, [data.customEvents, data.builtinEdits, data.hiddenBuiltins]);
-
-  // Count hidden built-ins for restore UI
-  const hiddenCount = data.hiddenBuiltins.length;
-
-  if (!loaded) return <div style={{ background: "#08080e", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontFamily: "sans-serif" }}>Loading Ambria Hub...</div>;
+  if (loading) return <div style={{ background: "#08080e", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontFamily: "sans-serif" }}>Loading Ambria Hub...</div>;
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#08080e", minHeight: "100vh", color: "#ddd" }}>
@@ -190,7 +85,7 @@ export default function AmbriaHub() {
       {/* CONTENT */}
       <div style={{ padding: "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
         {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} />}
-        {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={data.hiddenBuiltins} />}
+        {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} />}
         {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} allEvents={allEvents} />}
         {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} />}
         {tab === "pages" && <PagesView allEvents={allEvents} />}

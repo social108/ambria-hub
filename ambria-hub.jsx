@@ -281,27 +281,27 @@ export default function AmbriaHub() {
   // Count hidden built-ins for restore UI
   const hiddenCount = data.hiddenBuiltins.length;
 
-  if (!loaded) return <div style={{ background: "#08080e", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontFamily: "sans-serif" }}>Loading Ambria Hub...</div>;
+  if (!loaded) return <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>Loading Ambria Hub...</div>;
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#08080e", minHeight: "100vh", color: "#ddd" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F3", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
         input, select, textarea { font-family: 'DM Sans', sans-serif; }
       `}</style>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
       {/* NAV */}
       <nav style={{
         display: "flex", alignItems: "center", gap: 8, padding: "14px 24px",
-        background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "#ffffff", borderBottom: "1px solid #eeeee9",
         position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(20px)",
       }}>
-        <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: 18, background: "linear-gradient(135deg,#C9A84C,#F6AD55)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginRight: 20 }}>
+        <div style={{ fontFamily: "'Sora'", fontWeight: 800, fontSize: 18, color: "#1a1a1a", marginRight: 20 }}>
           AMBRIA HUB
         </div>
         {[
@@ -313,8 +313,8 @@ export default function AmbriaHub() {
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: tab === t.id ? "rgba(201,168,76,0.2)" : "transparent",
-            color: tab === t.id ? "#C9A84C" : "rgba(255,255,255,0.45)",
+            background: tab === t.id ? "#f3f2ef" : "transparent",
+            color: tab === t.id ? "#1a1a1a" : "#9ca3af",
             transition: "all 0.2s", position: "relative",
           }}>
             {t.label}
@@ -450,20 +450,21 @@ function RemindersView({ allEvents, data }) {
     <div>
       <style>{`
         .reminder-card {
-          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+          background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 12px; padding: 14px 18px; margin-bottom: 6px;
           transition: all 0.15s; position: relative; overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
-        .reminder-card:hover { background: rgba(255,255,255,0.045); }
-        .reminder-card.urgent { border-color: rgba(239,83,80,0.25); background: rgba(239,83,80,0.03); }
-        .reminder-card.today-card { border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.04); }
-        .reminder-card.overdue-card { border-color: rgba(239,83,80,0.3); background: rgba(239,83,80,0.05); }
+        .reminder-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .reminder-card.urgent { border-color: rgba(239,83,80,0.3); background: rgba(239,83,80,0.03); }
+        .reminder-card.today-card { border-color: rgba(255,179,0,0.3); background: rgba(255,179,0,0.04); }
+        .reminder-card.overdue-card { border-color: rgba(239,83,80,0.3); background: rgba(239,83,80,0.04); }
         .date-divider {
           display: flex; align-items: center; gap: 12px; margin: 18px 0 10px; padding-bottom: 6px;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
+          border-bottom: 1px solid #eeeee9;
         }
-        .date-divider-label { font-family: 'Outfit'; font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.75); }
-        .date-divider-sub { font-size: 11px; color: rgba(255,255,255,0.3); }
+        .date-divider-label { font-family: 'Sora'; font-size: 14px; font-weight: 700; color: #374151; }
+        .date-divider-sub { font-size: 11px; color: #9ca3af; }
         .reminder-type-icon {
           width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
           justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0;
@@ -474,34 +475,34 @@ function RemindersView({ allEvents, data }) {
 
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#EF5350 70%,#FFB300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Reminders & Deadlines
         </h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Auto-calculated creative deadlines, ad launch dates, and story reminders for every event</p>
+        <p style={{ fontSize: 13, color: "#9ca3af" }}>Auto-calculated creative deadlines, ad launch dates, and story reminders for every event</p>
       </div>
 
       {/* Urgency stats */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
         {overdueCount > 0 && (
-          <div style={{ background: "rgba(239,83,80,0.08)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Outfit'", fontSize: 22, fontWeight: 700, color: "#EF5350" }}>{overdueCount}</span>
+          <div style={{ background: "rgba(239,83,80,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#EF5350" }}>{overdueCount}</span>
             <span style={{ fontSize: 11, color: "#EF5350", textTransform: "uppercase", fontWeight: 600 }}>Overdue</span>
           </div>
         )}
-        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Outfit'", fontSize: 22, fontWeight: 700, color: "#C9A84C" }}>{todayCount}</span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Today</span>
+        <div style={{ background: "rgba(255,179,0,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#C9A84C" }}>{todayCount}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>Today</span>
         </div>
-        <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Outfit'", fontSize: 22, fontWeight: 700, color: "#FFB300" }}>{weekCount}</span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>This Week</span>
+        <div style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#FFB300" }}>{weekCount}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>This Week</span>
         </div>
       </div>
 
       {/* Legend */}
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 12, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 12, padding: "8px 0", borderBottom: "1px solid #eeeee9" }}>
         {Object.entries(REMINDER_TYPES).map(([k, v]) => (
-          <div key={k} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
             <span style={{ color: v.color, fontWeight: 700 }}>{v.icon}</span> {v.label}
           </div>
         ))}
@@ -532,7 +533,7 @@ function RemindersView({ allEvents, data }) {
         return (
           <div key={date}>
             <div className="date-divider">
-              <span className="date-divider-label" style={{ color: isToday ? "#C9A84C" : isPast ? "#EF5350" : "rgba(255,255,255,0.75)" }}>
+              <span className="date-divider-label" style={{ color: isToday ? "#C9A84C" : isPast ? "#EF5350" : "#374151" }}>
                 {formatDate(date)}
               </span>
               <span className="date-divider-sub">{dayLabel}</span>
@@ -554,14 +555,14 @@ function RemindersView({ allEvents, data }) {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: rt.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{rt.label}</span>
-                        {r.daysUntil === 0 && <span style={{ fontSize: 9, background: "rgba(201,168,76,0.2)", color: "#C9A84C", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
+                        {r.daysUntil === 0 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
                         {r.daysUntil < 0 && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.15)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
                         {r.daysUntil === 1 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TOMORROW</span>}
                       </div>
-                      <div style={{ fontFamily: "'Outfit'", fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginBottom: 3 }}>
+                      <div style={{ fontFamily: "'Sora'", fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 }}>
                         {r.event.name}
                       </div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 4 }}>
+                      <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, marginBottom: 4 }}>
                         {r.message}
                       </div>
                       {/* Show which pages */}
@@ -575,7 +576,7 @@ function RemindersView({ allEvents, data }) {
                       )}
                       {/* Ad timeline context for ad-related reminders */}
                       {(r.type === "creative_deadline" || r.type === "ad_start") && (
-                        <div style={{ marginTop: 6, display: "flex", gap: 10, fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                        <div style={{ marginTop: 6, display: "flex", gap: 10, fontSize: 10, color: "#d1d5db" }}>
                           <span>✎ Creative by {formatDate(getCreativeDeadline(r.event.date, r.event.adLeadDays || 15))}</span>
                           <span>→</span>
                           <span>▲ Ads from {formatDate(getAdStartDate(r.event.date, r.event.adLeadDays || 15))}</span>
@@ -588,7 +589,7 @@ function RemindersView({ allEvents, data }) {
                       <div style={{ fontSize: 10, fontWeight: 700, color: priorityColors[r.event.priority] || "#78909C", background: `${priorityColors[r.event.priority] || "#78909C"}15`, padding: "2px 8px", borderRadius: 5, marginBottom: 4 }}>
                         P{r.event.priority}
                       </div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{r.event.cat}</div>
+                      <div style={{ fontSize: 10, color: "#d1d5db" }}>{r.event.cat}</div>
                     </div>
                   </div>
                 </div>
@@ -735,22 +736,22 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
   return (
     <div>
       <style>{`
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
-        .cal-header-cell { padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; background: rgba(255,255,255,0.02); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eeeee9; border-radius: 12px; overflow: hidden; border: 1px solid #eeeee9; }
+        .cal-header-cell { padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; background: #f8f8f6; }
         .cal-cell {
-          min-height: 100px; padding: 6px; background: rgba(8,8,14,0.9); position: relative;
+          min-height: 100px; padding: 6px; background: #ffffff; position: relative;
           cursor: pointer; transition: background 0.15s; vertical-align: top;
         }
-        .cal-cell:hover { background: rgba(255,255,255,0.03); }
-        .cal-cell.outside { opacity: 0.3; }
-        .cal-cell.today { background: rgba(201,168,76,0.06); }
-        .cal-cell.selected { background: rgba(201,168,76,0.1); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.3); }
+        .cal-cell:hover { background: #f8f8f6; }
+        .cal-cell.outside { opacity: 0.35; }
+        .cal-cell.today { background: rgba(255,179,0,0.06); }
+        .cal-cell.selected { background: rgba(26,26,26,0.04); box-shadow: inset 0 0 0 1px rgba(26,26,26,0.15); }
         .cal-day-num {
-          font-family: 'Outfit'; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6);
+          font-family: 'Sora'; font-size: 13px; font-weight: 600; color: #6b7280;
           width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
           border-radius: 50%; margin-bottom: 3px;
         }
-        .cal-day-num.today-num { background: #C9A84C; color: #000; font-weight: 800; }
+        .cal-day-num.today-num { background: #1a1a1a; color: #fff; font-weight: 800; }
         .cal-evt-dot {
           display: flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 4px;
           font-size: 9.5px; font-weight: 600; margin-bottom: 2px; cursor: pointer;
@@ -760,55 +761,56 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
         .cal-evt-dot:hover { filter: brightness(1.3); transform: scale(1.02); }
         .cal-add-btn {
           position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
-          border-radius: 50%; border: none; background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.25); font-size: 14px; cursor: pointer;
+          border-radius: 50%; border: none; background: #f3f2ef;
+          color: #9ca3af; font-size: 14px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           opacity: 0; transition: opacity 0.15s;
         }
         .cal-cell:hover .cal-add-btn { opacity: 1; }
-        .cal-add-btn:hover { background: rgba(201,168,76,0.2); color: #C9A84C; }
+        .cal-add-btn:hover { background: rgba(26,26,26,0.08); color: #1a1a1a; }
         .cal-modal-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+          position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200;
           display: flex; align-items: center; justify-content: center;
-          animation: calFadeIn 0.2s ease;
+          animation: calFadeIn 0.2s ease; backdrop-filter: blur(8px);
         }
         .cal-modal {
-          background: #14141f; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+          background: #ffffff; border: 1px solid #e5e5e0; border-radius: 20px;
           width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;
-          animation: calSlideUp 0.25s ease;
+          animation: calSlideUp 0.25s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
         }
         @keyframes calFadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes calSlideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
         .cal-sidebar {
-          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+          background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 12px; padding: 16px; margin-top: 16px; animation: calFadeIn 0.2s ease;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .cal-sidebar-event {
           padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
-          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+          background: #ffffff; border: 1px solid #eeeee9;
           transition: all 0.15s; cursor: pointer;
         }
-        .cal-sidebar-event:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .cal-sidebar-event:hover { background: #f8f8f6; border-color: #e5e5e0; }
       `}</style>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#C9A84C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 2 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 2 }}>
             Events Calendar
           </h1>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view · Hover + to add</p>
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view · Hover + to add</p>
         </div>
         <button onClick={() => openAdd("")} style={{
           padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+          background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
         }}>+ Add Event</button>
       </div>
 
       {/* Month nav + filter */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <button onClick={() => navigateMonth(-1)} style={navBtnStyle}>‹</button>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.9)", minWidth: 200, textAlign: "center" }}>
+        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 700, color: "#1a1a1a", minWidth: 200, textAlign: "center" }}>
           {MONTHS_FULL[viewMonth]} {viewYear}
         </div>
         <button onClick={() => navigateMonth(1)} style={navBtnStyle}>›</button>
@@ -861,7 +863,7 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                 );
               })}
               {evts.length > 3 && (
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", padding: "1px 5px" }}>+{evts.length - 3} more</div>
+                <div style={{ fontSize: 9, color: "#d1d5db", padding: "1px 5px" }}>+{evts.length - 3} more</div>
               )}
             </div>
           );
@@ -872,10 +874,10 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
       {selectedDate && (eventsByDate[selectedDate]?.length > 0) && (
         <div className="cal-sidebar">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ fontFamily: "'Outfit'", fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
+            <div style={{ fontFamily: "'Sora'", fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)} — {eventsByDate[selectedDate].length} event{eventsByDate[selectedDate].length > 1 ? "s" : ""}
             </div>
-            <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "4px 12px", color: "#C9A84C", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
+            <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
           </div>
           {eventsByDate[selectedDate].map((evt, i) => {
             const priorityColors = ["#78909C","#FFB300","#F4511E","#D50000"];
@@ -884,14 +886,14 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 4, height: 28, borderRadius: 2, background: priorityColors[evt.priority] || "#78909C" }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Outfit'", fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Sora'", fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
                       {evt.name}
                       {evt.custom && <span style={{ fontSize: 9, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "1px 6px", borderRadius: 4 }}>Custom</span>}
                       {!evt.custom && evt.edited && <span style={{ fontSize: 9, background: "rgba(66,165,245,0.15)", color: "#42A5F5", padding: "1px 6px", borderRadius: 4 }}>Edited</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{evt.cat}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{evt.cat}</div>
                   </div>
-                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer" }}>✕</button>
+                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.08)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer" }}>✕</button>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: evt.note ? 6 : 0 }}>
                   {(evt.actions || []).map(a => {
@@ -899,7 +901,7 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                     return at ? <span key={a} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: 4, fontSize: 9.5, fontWeight: 600, background: at.bg, color: at.color }}>{at.icon} {at.label}</span> : null;
                   })}
                 </div>
-                {evt.note && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginTop: 4 }}>💡 {evt.note}</div>}
+                {evt.note && <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.5, marginTop: 4 }}>💡 {evt.note}</div>}
                 {(evt.pages || []).length > 0 && (
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
                     {evt.pages.map(pid => {
@@ -918,8 +920,8 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
       {hiddenCount > 0 && (
         <div style={{ marginTop: 16, background: "rgba(239,83,80,0.04)", border: "1px solid rgba(239,83,80,0.12)", borderRadius: 12, padding: "12px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: hiddenCount > 0 ? 8 : 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>🗑 {hiddenCount} hidden event{hiddenCount > 1 ? "s" : ""}</span>
-            <button onClick={() => setModal({ mode: "restore" })} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "4px 12px", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Restore Events</button>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280" }}>🗑 {hiddenCount} hidden event{hiddenCount > 1 ? "s" : ""}</span>
+            <button onClick={() => setModal({ mode: "restore" })} style={{ background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#6b7280", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Restore Events</button>
           </div>
         </div>
       )}
@@ -933,17 +935,17 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
             {modal.mode === "restore" ? (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>Restore Hidden Events</div>
-                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
+                  <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Restore Hidden Events</div>
+                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
                 {hiddenBuiltins.map(hid => {
                   const original = EVENTS.find(e => `builtin-${e.date}-${e.name}` === hid);
                   if (!original) return null;
                   return (
-                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, marginBottom: 6 }}>
+                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, marginBottom: 6 }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{original.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{formatDate(original.date)} · {original.cat}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{original.name}</div>
+                        <div style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(original.date)} · {original.cat}</div>
                       </div>
                       <button onClick={() => { restoreBuiltin(hid); if (hiddenBuiltins.length <= 1) setModal(null); }} style={{ background: "rgba(102,187,106,0.15)", border: "1px solid rgba(102,187,106,0.3)", borderRadius: 8, padding: "6px 14px", color: "#66BB6A", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Restore</button>
                     </div>
@@ -955,7 +957,7 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: "#C9A84C" }}>
+                    <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>
                       {modal.mode === "add" ? "Add New Event" : "Edit Event"}
                     </div>
                     {modal.mode === "edit" && !modal.event?.custom && (
@@ -965,7 +967,7 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                       <span style={{ fontSize: 10, background: "rgba(201,168,76,0.12)", color: "#C9A84C", padding: "3px 10px", borderRadius: 6, fontWeight: 600 }}>Custom</span>
                     )}
                   </div>
-                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
+                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
@@ -1004,9 +1006,9 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                     {Object.entries(ACTION_TYPES).map(([k, v]) => (
                       <button key={k} onClick={() => toggleFormAction(k)} style={{
                         padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                        border: `1px solid ${form.actions.includes(k) ? v.color : "rgba(255,255,255,0.1)"}`,
-                        background: form.actions.includes(k) ? `${v.color}20` : "rgba(255,255,255,0.03)",
-                        color: form.actions.includes(k) ? v.color : "rgba(255,255,255,0.45)",
+                        border: `1px solid ${form.actions.includes(k) ? v.color : "#e5e5e0"}`,
+                        background: form.actions.includes(k) ? `${v.color}20` : "#ffffff",
+                        color: form.actions.includes(k) ? v.color : "#9ca3af",
                       }}>{v.icon} {v.label}</button>
                     ))}
                   </div>
@@ -1018,9 +1020,9 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                     {PAGES.map(pg => (
                       <button key={pg.id} onClick={() => toggleFormPage(pg.id)} style={{
                         padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                        border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.08)"}`,
-                        background: form.pages.includes(pg.id) ? `${pg.color}18` : "rgba(255,255,255,0.02)",
-                        color: form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.4)",
+                        border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "#e5e5e0"}`,
+                        background: form.pages.includes(pg.id) ? `${pg.color}18` : "#ffffff",
+                        color: form.pages.includes(pg.id) ? pg.color : "#9ca3af",
                       }}>{pg.name.replace("Ambria ", "")}</button>
                     ))}
                   </div>
@@ -1034,14 +1036,14 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button onClick={handleSave} style={{
                     padding: "10px 28px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+                    background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
                   }}>{modal.mode === "add" ? "Add Event" : "Save Changes"}</button>
-                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                   {modal.mode === "edit" && !modal.event?.custom && modal.event?.edited && (
                     <button onClick={() => handleReset(modal.event)} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>↺ Reset to Default</button>
                   )}
                   {modal.mode === "edit" && (
-                    <button onClick={() => handleDelete(modal.event)} style={{ marginLeft: "auto", padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={() => handleDelete(modal.event)} style={{ marginLeft: "auto", padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.08)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       {modal.event?.custom ? "Delete" : "Hide Event"}
                     </button>
                   )}
@@ -1055,19 +1057,19 @@ function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, 
   );
 }
 
-const navBtnStyle = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 14px", color: "rgba(255,255,255,0.6)", fontSize: 18, cursor: "pointer", fontWeight: 600 };
-const inputStyle = { width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ddd", fontSize: 13 };
+const navBtnStyle = { background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "5px 14px", color: "#6b7280", fontSize: 18, cursor: "pointer", fontWeight: 600 };
+const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
 function FieldLabel({ children }) {
-  return <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>{children}</div>;
+  return <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>{children}</div>;
 }
 
 function MiniChip({ children, active, onClick, color }) {
   return (
     <button onClick={onClick} style={{
-      padding: "4px 10px", borderRadius: 6, border: `1px solid ${active ? (color || "rgba(201,168,76,0.5)") : "rgba(255,255,255,0.06)"}`,
-      background: active ? `${color || "rgba(201,168,76,1)"}15` : "rgba(255,255,255,0.02)",
-      color: active ? (color || "#C9A84C") : "rgba(255,255,255,0.4)",
+      padding: "4px 10px", borderRadius: 6, border: `1px solid ${active ? (color || "#1a1a1a") : "#e5e5e0"}`,
+      background: active ? `${color || "rgba(26,26,26,1)"}15` : "#ffffff",
+      color: active ? (color || "#1a1a1a") : "#9ca3af",
       fontSize: 10.5, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
     }}>{children}</button>
   );
@@ -1157,33 +1159,35 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
         .kanban-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 16px; min-height: 500px; }
         .kanban-col {
           min-width: 220px; max-width: 260px; flex: 1 0 220px;
-          background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;
+          background: #ffffff; border: 1px solid #eeeee9;
+          border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
-        .kanban-col.drag-over { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.03); }
+        .kanban-col.drag-over { border-color: rgba(26,26,26,0.3); background: rgba(26,26,26,0.02); }
         .kanban-col-header {
           padding: 14px 14px 10px; display: flex; align-items: center; justify-content: space-between;
-          border-bottom: 1px solid rgba(255,255,255,0.04); position: sticky; top: 0; z-index: 2;
-          background: rgba(12,12,18,0.9); backdrop-filter: blur(8px);
+          border-bottom: 1px solid #eeeee9; position: sticky; top: 0; z-index: 2;
+          background: #ffffff;
         }
         .kanban-col-body { padding: 8px; flex: 1; overflow-y: auto; max-height: 65vh; }
         .kanban-card {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+          background: #ffffff; border: 1px solid #eeeee9;
+          border-radius: 12px; padding: 10px 12px; margin-bottom: 6px;
           cursor: grab; transition: all 0.2s; position: relative;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
-        .kanban-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #e5e5e0; transform: translateY(-1px); }
         .kanban-card.dragging { opacity: 0.4; transform: scale(0.95); }
         .kanban-card .card-event {
-          font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 600;
-          color: rgba(255,255,255,0.88); line-height: 1.3; margin-bottom: 5px;
+          font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 600;
+          color: #1a1a1a; line-height: 1.3; margin-bottom: 5px;
         }
         .kanban-card .card-page {
           display: inline-flex; align-items: center; gap: 4px;
           font-size: 10.5px; font-weight: 500; padding: 2px 7px; border-radius: 5px;
           margin-bottom: 6px;
         }
-        .kanban-card .card-date { font-size: 10px; color: rgba(255,255,255,0.35); }
+        .kanban-card .card-date { font-size: 10px; color: #9ca3af; }
         .kanban-card .card-actions { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
         .kanban-card .card-actions span {
           font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
@@ -1192,29 +1196,29 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
           position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 10px 10px 0 0;
         }
         .card-expanded-note {
-          margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,0.03);
-          border-radius: 6px; border-left: 2px solid rgba(201,168,76,0.4);
-          font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.5;
+          margin-top: 8px; padding: 8px 10px; background: #f8f8f6;
+          border-radius: 6px; border-left: 2px solid #d1d5db;
+          font-size: 11px; color: #6b7280; line-height: 1.5;
           animation: kFadeIn 0.15s ease;
         }
         .card-move-btns { display: flex; gap: 4px; margin-top: 8px; animation: kFadeIn 0.15s ease; }
         .card-move-btn {
-          flex: 1; padding: 5px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); font-size: 9.5px;
+          flex: 1; padding: 5px 4px; border-radius: 6px; border: 1px solid #e5e5e0;
+          background: #ffffff; color: #6b7280; font-size: 9.5px;
           font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s;
         }
-        .card-move-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+        .card-move-btn:hover { background: #f3f2ef; color: #1a1a1a; }
         @keyframes kFadeIn { from { opacity:0; transform:translateY(-4px) } to { opacity:1; transform:translateY(0) } }
         .kanban-stats-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .kanban-stat {
           display: flex; align-items: center; gap: 8px;
-          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+          background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 10px; padding: 8px 14px;
         }
-        .kanban-stat .ks-num { font-family: 'Outfit'; font-size: 20px; font-weight: 700; }
-        .kanban-stat .ks-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kanban-stat .ks-num { font-family: 'Sora'; font-size: 20px; font-weight: 700; }
+        .kanban-stat .ks-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
         .kanban-progress-bar {
-          height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06);
+          height: 4px; border-radius: 2px; background: #eeeee9;
           overflow: hidden; margin-bottom: 16px;
         }
         .kanban-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
@@ -1222,10 +1226,10 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
 
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#66BB6A)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Workflow Board
         </h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Drag cards between columns or click to move · Each card = 1 event × 1 page</p>
+        <p style={{ fontSize: 13, color: "#9ca3af" }}>Drag cards between columns or click to move · Each card = 1 event × 1 page</p>
       </div>
 
       {/* Stats */}
@@ -1257,14 +1261,14 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
 
       {/* Filters */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Show</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Show</span>
         {[
           { v: "thisweek", l: "This Week" }, { v: "upcoming", l: "Next 45 Days" },
           { v: "overdue", l: "⚠ Overdue" }, { v: "all", l: "All Year" },
         ].map(f => <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)}>{f.l}</Chip>)}
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Page</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Page</span>
         <Chip active={pageFilter === "All"} onClick={() => setPageFilter("All")}>All Pages</Chip>
         {PAGES.map(p => (
           <Chip key={p.id} active={pageFilter === p.id} onClick={() => setPageFilter(p.id)}>
@@ -1290,7 +1294,7 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
               <div className="kanban-col-header">
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ fontSize: 14, color: col.color, fontWeight: 700 }}>{col.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.75)", fontFamily: "'Outfit'" }}>{col.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#374151", fontFamily: "'Sora'" }}>{col.label}</span>
                 </div>
                 <span style={{
                   fontSize: 11, fontWeight: 700, color: col.color,
@@ -1299,7 +1303,7 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
               </div>
               <div className="kanban-col-body">
                 {cards.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "30px 10px", color: "rgba(255,255,255,0.15)", fontSize: 12 }}>
+                  <div style={{ textAlign: "center", padding: "30px 10px", color: "#d1d5db", fontSize: 12 }}>
                     Drop cards here
                   </div>
                 )}
@@ -1341,8 +1345,8 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
                         {task.days >= 0 ? (
                           <span style={{
                             fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4,
-                            background: task.days <= 3 ? "rgba(239,83,80,0.15)" : task.days <= 7 ? "rgba(255,179,0,0.12)" : "rgba(255,255,255,0.05)",
-                            color: task.days <= 3 ? "#EF5350" : task.days <= 7 ? "#FFB300" : "rgba(255,255,255,0.35)",
+                            background: task.days <= 3 ? "rgba(239,83,80,0.15)" : task.days <= 7 ? "rgba(255,179,0,0.12)" : "#f5f4f1",
+                            color: task.days <= 3 ? "#EF5350" : task.days <= 7 ? "#FFB300" : "#9ca3af",
                           }}>
                             {task.days === 0 ? "TODAY" : `${task.days}d`}
                           </span>
@@ -1364,7 +1368,7 @@ function WorkflowView({ data, updateWorkflow, allEvents }) {
                       {/* Ad timeline if applicable */}
                       {task.event.actions.includes("ad") && task.event.adLeadDays && (
                         <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
-                          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.03)", padding: "2px 6px", borderRadius: 4 }}>
+                          <span style={{ fontSize: 9, color: "#d1d5db", background: "#f8f8f6", padding: "2px 6px", borderRadius: 4 }}>
                             ✎ Creative by {formatDate(getCreativeDeadline(task.event.date, task.event.adLeadDays))}
                           </span>
                           <span style={{ fontSize: 9, color: "rgba(230,81,0,0.6)", background: "rgba(230,81,0,0.06)", padding: "2px 6px", borderRadius: 4 }}>
@@ -1436,14 +1440,14 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
     <div>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#FFB300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
             Ad Budget & Requests
           </h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Venue team submits ad requests → Creative team builds & runs</p>
+          <p style={{ fontSize: 13, color: "#9ca3af" }}>Venue team submits ad requests → Creative team builds & runs</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} style={{
           padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+          background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
         }}>+ New Ad Request</button>
       </div>
 
@@ -1454,18 +1458,18 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
           { label: "Total Budget", val: `₹${totalBudget.toLocaleString("en-IN")}`, color: "#FFB300" },
           { label: "Active/Approved", val: `₹${liveBudget.toLocaleString("en-IN")}`, color: "#66BB6A" },
         ].map(s => (
-          <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{s.label}</span>
+          <div key={s.label} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</span>
+            <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>{s.label}</span>
           </div>
         ))}
         {/* Per-page budget breakdown */}
         {PAGES.filter(p => !p.noAds).map(pg => {
           const pageBudget = data.adRequests.filter(a => a.pages?.includes(pg.id)).reduce((s,a) => s + (parseFloat(a.budget) || 0) / (a.pages?.length || 1), 0);
           return pageBudget > 0 ? (
-            <div key={pg.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={pg.id} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: pg.color }} />
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{pg.name}</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>{pg.name}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: pg.color }}>₹{Math.round(pageBudget).toLocaleString("en-IN")}</span>
             </div>
           ) : null;
@@ -1474,9 +1478,9 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
 
       {/* NEW REQUEST FORM */}
       {showForm && (
-        <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
+        <div style={{ background: "#f8f8f6", border: "1px solid #e5e5e0", borderRadius: 14, padding: 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
           <style>{`@keyframes fadeSlide { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }`}</style>
-          <div style={{ fontSize: 16, fontFamily: "'Outfit'", fontWeight: 700, color: "#C9A84C", marginBottom: 16 }}>New Ad Request</div>
+          <div style={{ fontSize: 16, fontFamily: "'Sora'", fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>New Ad Request</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
             <InputField label="Budget (₹)" value={form.budget} onChange={v => setForm(f => ({...f, budget: v}))} placeholder="e.g. 25000" type="number" />
@@ -1485,27 +1489,27 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
             <InputField label="Requested By" value={form.requestedBy} onChange={v => setForm(f => ({...f, requestedBy: v}))} placeholder="e.g. Venue Manager name" />
           </div>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {PAGES.filter(p => !p.noAds).map(pg => (
                 <button key={pg.id} onClick={() => togglePage(pg.id)} style={{
-                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.1)"}`,
-                  background: form.pages.includes(pg.id) ? `${pg.color}20` : "rgba(255,255,255,0.03)",
-                  color: form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.5)",
+                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "#e5e5e0"}`,
+                  background: form.pages.includes(pg.id) ? `${pg.color}20` : "#ffffff",
+                  color: form.pages.includes(pg.id) ? pg.color : "#6b7280",
                   fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
                 }}>{pg.name}</button>
               ))}
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
             <textarea value={form.brief} onChange={e => setForm(f => ({...f, brief: e.target.value}))} placeholder="Describe the ad content, target audience, key message..." style={{
-              width: "100%", minHeight: 80, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 12, color: "#ddd", fontSize: 13, resize: "vertical",
+              width: "100%", minHeight: 80, background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, padding: 12, color: "#1a1a1a", fontSize: 13, resize: "vertical",
             }} />
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Submit Request</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Submit Request</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -1522,14 +1526,14 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
         const stInfo = AD_REQUEST_STATUS[req.status] || AD_REQUEST_STATUS.requested;
         return (
           <div key={req.id} style={{
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+            background: "#ffffff", border: "1px solid #eeeee9",
             borderRadius: 12, padding: "16px 20px", marginBottom: 8,
             borderLeft: `3px solid ${stInfo.color}`,
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Outfit'", fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{req.eventName}</span>
+                  <span style={{ fontFamily: "'Sora'", fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
                   <select
                     value={req.status}
                     onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
@@ -1538,11 +1542,11 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
                     {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
                   <span>💰 <strong style={{ color: "#FFB300" }}>₹{parseFloat(req.budget).toLocaleString("en-IN")}</strong></span>
                   {req.startDate && <span>📅 {formatDate(req.startDate)} → {req.endDate ? formatDate(req.endDate) : "TBD"}</span>}
                   {req.requestedBy && <span>👤 {req.requestedBy}</span>}
-                  <span style={{ color: "rgba(255,255,255,0.3)" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>
+                  <span style={{ color: "#d1d5db" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: req.brief ? 8 : 0 }}>
                   {(req.pages || []).map(pid => {
@@ -1550,9 +1554,9 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
                     return pg ? <span key={pid} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: `${pg.color}18`, color: pg.color, fontWeight: 600 }}>{pg.name}</span> : null;
                   })}
                 </div>
-                {req.brief && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, background: "rgba(255,255,255,0.02)", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
+                {req.brief && <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.5, background: "#f8f8f6", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
               </div>
-              <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer" }}>✕</button>
+              <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.08)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer" }}>✕</button>
             </div>
           </div>
         );
@@ -1567,33 +1571,33 @@ function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }
 function PagesView({ allEvents }) {
   return (
     <div>
-      <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#BA68C8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+      <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
         Ambria Instagram Pages
       </h1>
-      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>All 8 pages at a glance — click to open on Instagram</p>
+      <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 20 }}>All 8 pages at a glance — click to open on Instagram</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
         {PAGES.map(pg => (
           <a key={pg.id} href={pg.url} target="_blank" rel="noopener noreferrer" style={{
-            textDecoration: "none", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+            textDecoration: "none", background: "#ffffff", border: "1px solid #eeeee9",
             borderRadius: 14, padding: 20, transition: "all 0.25s", display: "block",
             borderLeft: `4px solid ${pg.color}`,
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.transform = "translateY(0)"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#f5f4f1"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.transform = "translateY(0)"; }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${pg.color}25`, border: `2px solid ${pg.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: pg.color, fontFamily: "'Outfit'" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${pg.color}25`, border: `2px solid ${pg.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: pg.color, fontFamily: "'Sora'" }}>
                 {pg.name.charAt(pg.name.indexOf(" ") + 1 || 0).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontFamily: "'Outfit'", fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{pg.name}</div>
+                <div style={{ fontFamily: "'Sora'", fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{pg.name}</div>
                 <div style={{ fontSize: 12, color: pg.color }}>{pg.handle}</div>
               </div>
-              {pg.noAds && <span style={{ marginLeft: "auto", fontSize: 10, background: "rgba(255,255,255,0.06)", padding: "2px 8px", borderRadius: 5, color: "rgba(255,255,255,0.35)" }}>No Ads</span>}
+              {pg.noAds && <span style={{ marginLeft: "auto", fontSize: 10, background: "#f3f2ef", padding: "2px 8px", borderRadius: 5, color: "#9ca3af" }}>No Ads</span>}
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>{pg.desc}</div>
+            <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.5 }}>{pg.desc}</div>
             {/* Events count */}
-            <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+            <div style={{ marginTop: 10, fontSize: 11, color: "#d1d5db" }}>
               📅 {allEvents.filter(e => (e.pages || []).includes(pg.id)).length} calendar events assigned
             </div>
           </a>
@@ -1609,9 +1613,9 @@ function PagesView({ allEvents }) {
 function Chip({ children, active, onClick }) {
   return (
     <button onClick={onClick} style={{
-      padding: "5px 14px", borderRadius: 20, border: `1px solid ${active ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)"}`,
-      background: active ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.03)",
-      color: active ? "#C9A84C" : "rgba(255,255,255,0.5)",
+      padding: "5px 14px", borderRadius: 20, border: `1px solid ${active ? "#1a1a1a" : "#e5e5e0"}`,
+      background: active ? "rgba(26,26,26,0.08)" : "#ffffff",
+      color: active ? "#1a1a1a" : "#9ca3af",
       fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
     }}>{children}</button>
   );
@@ -1620,10 +1624,10 @@ function Chip({ children, active, onClick }) {
 function InputField({ label, value, onChange, placeholder, type = "text" }) {
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{
-        width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 8, color: "#ddd", fontSize: 13,
+        width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0",
+        borderRadius: 10, color: "#1a1a1a", fontSize: 13,
       }} />
     </div>
   );
@@ -1631,7 +1635,7 @@ function InputField({ label, value, onChange, placeholder, type = "text" }) {
 
 function EmptyState({ msg }) {
   return (
-    <div style={{ textAlign: "center", padding: "48px 20px", color: "rgba(255,255,255,0.25)" }}>
+    <div style={{ textAlign: "center", padding: "48px 20px", color: "#d1d5db" }}>
       <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
       <div style={{ fontSize: 14 }}>{msg}</div>
     </div>

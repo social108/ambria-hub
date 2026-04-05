@@ -5,8 +5,8 @@ import { daysUntil, formatDate } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
 
-const navBtnStyle = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 14px", color: "rgba(255,255,255,0.6)", fontSize: 18, cursor: "pointer", fontWeight: 600 };
-const inputStyle = { width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ddd", fontSize: 13 };
+const navBtnStyle = { background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "5px 14px", color: "#6b7280", fontSize: 18, cursor: "pointer", fontWeight: 600 };
+const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
 export default function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, deleteEvent, resetBuiltin, restoreBuiltin, hiddenCount, hiddenBuiltins }) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -135,22 +135,22 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   return (
     <div>
       <style>{`
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
-        .cal-header-cell { padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; background: rgba(255,255,255,0.02); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eeeee9; border-radius: 12px; overflow: hidden; border: 1px solid #eeeee9; }
+        .cal-header-cell { padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; background: #f8f8f6; }
         .cal-cell {
-          min-height: 100px; padding: 6px; background: rgba(8,8,14,0.9); position: relative;
+          min-height: 100px; padding: 6px; background: #ffffff; position: relative;
           cursor: pointer; transition: background 0.15s; vertical-align: top;
         }
-        .cal-cell:hover { background: rgba(255,255,255,0.03); }
-        .cal-cell.outside { opacity: 0.3; }
-        .cal-cell.today { background: rgba(201,168,76,0.06); }
-        .cal-cell.selected { background: rgba(201,168,76,0.1); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.3); }
+        .cal-cell:hover { background: #f8f8f6; }
+        .cal-cell.outside { opacity: 0.35; }
+        .cal-cell.today { background: rgba(180,140,50,0.06); }
+        .cal-cell.selected { background: rgba(26,26,26,0.04); box-shadow: inset 0 0 0 1px rgba(26,26,26,0.15); }
         .cal-day-num {
-          font-family: 'Outfit'; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6);
+          font-family: 'Sora'; font-size: 13px; font-weight: 600; color: #6b7280;
           width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
           border-radius: 50%; margin-bottom: 3px;
         }
-        .cal-day-num.today-num { background: #C9A84C; color: #000; font-weight: 800; }
+        .cal-day-num.today-num { background: #1a1a1a; color: #fff; font-weight: 800; }
         .cal-evt-dot {
           display: flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 4px;
           font-size: 9.5px; font-weight: 600; margin-bottom: 2px; cursor: pointer;
@@ -160,55 +160,56 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
         .cal-evt-dot:hover { filter: brightness(1.3); transform: scale(1.02); }
         .cal-add-btn {
           position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
-          border-radius: 50%; border: none; background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.25); font-size: 14px; cursor: pointer;
+          border-radius: 50%; border: none; background: #f3f2ef;
+          color: #9ca3af; font-size: 14px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           opacity: 0; transition: opacity 0.15s;
         }
         .cal-cell:hover .cal-add-btn { opacity: 1; }
-        .cal-add-btn:hover { background: rgba(201,168,76,0.2); color: #C9A84C; }
+        .cal-add-btn:hover { background: rgba(26,26,26,0.08); color: #1a1a1a; }
         .cal-modal-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+          position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); z-index: 200;
           display: flex; align-items: center; justify-content: center;
           animation: calFadeIn 0.2s ease;
         }
         .cal-modal {
-          background: #14141f; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+          background: #ffffff; border: 1px solid #e5e5e0; border-radius: 20px;
           width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;
-          animation: calSlideUp 0.25s ease;
+          animation: calSlideUp 0.25s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
         }
         @keyframes calFadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes calSlideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
         .cal-sidebar {
-          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+          background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 12px; padding: 16px; margin-top: 16px; animation: calFadeIn 0.2s ease;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .cal-sidebar-event {
           padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
-          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+          background: #ffffff; border: 1px solid #eeeee9;
           transition: all 0.15s; cursor: pointer;
         }
-        .cal-sidebar-event:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .cal-sidebar-event:hover { background: #f8f8f6; border-color: #e5e5e0; }
       `}</style>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#C9A84C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 2 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 2 }}>
             Events Calendar
           </h1>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view · Hover + to add</p>
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view · Hover + to add</p>
         </div>
         <button onClick={() => openAdd("")} style={{
           padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+          background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
         }}>+ Add Event</button>
       </div>
 
       {/* Month nav + filter */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <button onClick={() => navigateMonth(-1)} style={navBtnStyle}>‹</button>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.9)", minWidth: 200, textAlign: "center" }}>
+        <div style={{ fontFamily: "'Sora', serif", fontSize: 22, fontWeight: 700, color: "#1a1a1a", minWidth: 200, textAlign: "center" }}>
           {MONTHS_FULL[viewMonth]} {viewYear}
         </div>
         <button onClick={() => navigateMonth(1)} style={navBtnStyle}>›</button>
@@ -261,7 +262,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                 );
               })}
               {evts.length > 3 && (
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", padding: "1px 5px" }}>+{evts.length - 3} more</div>
+                <div style={{ fontSize: 9, color: "#d1d5db", padding: "1px 5px" }}>+{evts.length - 3} more</div>
               )}
             </div>
           );
@@ -272,10 +273,10 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
       {selectedDate && (eventsByDate[selectedDate]?.length > 0) && (
         <div className="cal-sidebar">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ fontFamily: "'Outfit'", fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
+            <div style={{ fontFamily: "'Sora'", fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)} — {eventsByDate[selectedDate].length} event{eventsByDate[selectedDate].length > 1 ? "s" : ""}
             </div>
-            <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "4px 12px", color: "#C9A84C", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
+            <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
           </div>
           {eventsByDate[selectedDate].map((evt, i) => {
             const priorityColors = ["#78909C","#FFB300","#F4511E","#D50000"];
@@ -284,12 +285,12 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 4, height: 28, borderRadius: 2, background: priorityColors[evt.priority] || "#78909C" }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Outfit'", fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Sora'", fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
                       {evt.name}
                       {evt.custom && <span style={{ fontSize: 9, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "1px 6px", borderRadius: 4 }}>Custom</span>}
                       {!evt.custom && evt.edited && <span style={{ fontSize: 9, background: "rgba(66,165,245,0.15)", color: "#42A5F5", padding: "1px 6px", borderRadius: 4 }}>Edited</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{evt.cat}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{evt.cat}</div>
                   </div>
                   <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer" }}>✕</button>
                 </div>
@@ -299,7 +300,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     return at ? <span key={a} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: 4, fontSize: 9.5, fontWeight: 600, background: at.bg, color: at.color }}>{at.icon} {at.label}</span> : null;
                   })}
                 </div>
-                {evt.note && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginTop: 4 }}>💡 {evt.note}</div>}
+                {evt.note && <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.5, marginTop: 4 }}>💡 {evt.note}</div>}
                 {(evt.pages || []).length > 0 && (
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
                     {evt.pages.map(pid => {
@@ -318,8 +319,8 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
       {hiddenCount > 0 && (
         <div style={{ marginTop: 16, background: "rgba(239,83,80,0.04)", border: "1px solid rgba(239,83,80,0.12)", borderRadius: 12, padding: "12px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: hiddenCount > 0 ? 8 : 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>🗑 {hiddenCount} hidden event{hiddenCount > 1 ? "s" : ""}</span>
-            <button onClick={() => setModal({ mode: "restore" })} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "4px 12px", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Restore Events</button>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280" }}>🗑 {hiddenCount} hidden event{hiddenCount > 1 ? "s" : ""}</span>
+            <button onClick={() => setModal({ mode: "restore" })} style={{ background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#6b7280", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Restore Events</button>
           </div>
         </div>
       )}
@@ -333,17 +334,17 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
             {modal.mode === "restore" ? (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>Restore Hidden Events</div>
-                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
+                  <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Restore Hidden Events</div>
+                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
                 {hiddenBuiltins.map(hid => {
                   const original = EVENTS.find(e => `builtin-${e.date}-${e.name}` === hid);
                   if (!original) return null;
                   return (
-                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, marginBottom: 6 }}>
+                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, marginBottom: 6 }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{original.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{formatDate(original.date)} · {original.cat}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{original.name}</div>
+                        <div style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(original.date)} · {original.cat}</div>
                       </div>
                       <button onClick={() => { restoreBuiltin(hid); if (hiddenBuiltins.length <= 1) setModal(null); }} style={{ background: "rgba(102,187,106,0.15)", border: "1px solid rgba(102,187,106,0.3)", borderRadius: 8, padding: "6px 14px", color: "#66BB6A", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Restore</button>
                     </div>
@@ -355,7 +356,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: "#C9A84C" }}>
+                    <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>
                       {modal.mode === "add" ? "Add New Event" : "Edit Event"}
                     </div>
                     {modal.mode === "edit" && !modal.event?.custom && (
@@ -365,7 +366,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                       <span style={{ fontSize: 10, background: "rgba(201,168,76,0.12)", color: "#C9A84C", padding: "3px 10px", borderRadius: 6, fontWeight: 600 }}>Custom</span>
                     )}
                   </div>
-                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer" }}>✕</button>
+                  <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
@@ -404,9 +405,9 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     {Object.entries(ACTION_TYPES).map(([k, v]) => (
                       <button key={k} onClick={() => toggleFormAction(k)} style={{
                         padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                        border: `1px solid ${form.actions.includes(k) ? v.color : "rgba(255,255,255,0.1)"}`,
-                        background: form.actions.includes(k) ? `${v.color}20` : "rgba(255,255,255,0.03)",
-                        color: form.actions.includes(k) ? v.color : "rgba(255,255,255,0.45)",
+                        border: `1px solid ${form.actions.includes(k) ? v.color : "#e5e5e0"}`,
+                        background: form.actions.includes(k) ? `${v.color}20` : "#ffffff",
+                        color: form.actions.includes(k) ? v.color : "#9ca3af",
                       }}>{v.icon} {v.label}</button>
                     ))}
                   </div>
@@ -418,9 +419,9 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     {PAGES.map(pg => (
                       <button key={pg.id} onClick={() => toggleFormPage(pg.id)} style={{
                         padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                        border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.08)"}`,
-                        background: form.pages.includes(pg.id) ? `${pg.color}18` : "rgba(255,255,255,0.02)",
-                        color: form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.4)",
+                        border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "#e5e5e0"}`,
+                        background: form.pages.includes(pg.id) ? `${pg.color}18` : "#ffffff",
+                        color: form.pages.includes(pg.id) ? pg.color : "#9ca3af",
                       }}>{pg.name.replace("Ambria ", "")}</button>
                     ))}
                   </div>
@@ -434,9 +435,9 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button onClick={handleSave} style={{
                     padding: "10px 28px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+                    background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
                   }}>{modal.mode === "add" ? "Add Event" : "Save Changes"}</button>
-                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                   {modal.mode === "edit" && !modal.event?.custom && modal.event?.edited && (
                     <button onClick={() => handleReset(modal.event)} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>↺ Reset to Default</button>
                   )}

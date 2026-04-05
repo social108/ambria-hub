@@ -29,14 +29,14 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
     <div>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Outfit'", fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff 30%,#FFB300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
             Ad Budget & Requests
           </h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Venue team submits ad requests → Creative team builds & runs</p>
+          <p style={{ fontSize: 13, color: "#9ca3af" }}>Venue team submits ad requests → Creative team builds & runs</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} style={{
           padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontSize: 13, fontWeight: 700,
+          background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
         }}>+ New Ad Request</button>
       </div>
 
@@ -47,18 +47,18 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
           { label: "Total Budget", val: `₹${totalBudget.toLocaleString("en-IN")}`, color: "#FFB300" },
           { label: "Active/Approved", val: `₹${liveBudget.toLocaleString("en-IN")}`, color: "#66BB6A" },
         ].map(s => (
-          <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Outfit'", fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{s.label}</span>
+          <div key={s.label} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</span>
+            <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>{s.label}</span>
           </div>
         ))}
         {/* Per-page budget breakdown */}
         {PAGES.filter(p => !p.noAds).map(pg => {
           const pageBudget = data.adRequests.filter(a => a.pages?.includes(pg.id)).reduce((s,a) => s + (parseFloat(a.budget) || 0) / (a.pages?.length || 1), 0);
           return pageBudget > 0 ? (
-            <div key={pg.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={pg.id} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: pg.color }} />
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{pg.name}</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>{pg.name}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: pg.color }}>₹{Math.round(pageBudget).toLocaleString("en-IN")}</span>
             </div>
           ) : null;
@@ -67,9 +67,9 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
 
       {/* NEW REQUEST FORM */}
       {showForm && (
-        <div style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
+        <div style={{ background: "#f8f8f6", border: "1px solid #e5e5e0", borderRadius: 14, padding: 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
           <style>{`@keyframes fadeSlide { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }`}</style>
-          <div style={{ fontSize: 16, fontFamily: "'Outfit'", fontWeight: 700, color: "#C9A84C", marginBottom: 16 }}>New Ad Request</div>
+          <div style={{ fontSize: 16, fontFamily: "'Sora'", fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>New Ad Request</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
             <InputField label="Budget (₹)" value={form.budget} onChange={v => setForm(f => ({...f, budget: v}))} placeholder="e.g. 25000" type="number" />
@@ -78,27 +78,27 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
             <InputField label="Requested By" value={form.requestedBy} onChange={v => setForm(f => ({...f, requestedBy: v}))} placeholder="e.g. Venue Manager name" />
           </div>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {PAGES.filter(p => !p.noAds).map(pg => (
                 <button key={pg.id} onClick={() => togglePage(pg.id)} style={{
-                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.1)"}`,
-                  background: form.pages.includes(pg.id) ? `${pg.color}20` : "rgba(255,255,255,0.03)",
-                  color: form.pages.includes(pg.id) ? pg.color : "rgba(255,255,255,0.5)",
+                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "#e5e5e0"}`,
+                  background: form.pages.includes(pg.id) ? `${pg.color}20` : "#ffffff",
+                  color: form.pages.includes(pg.id) ? pg.color : "#9ca3af",
                   fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
                 }}>{pg.name}</button>
               ))}
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
             <textarea value={form.brief} onChange={e => setForm(f => ({...f, brief: e.target.value}))} placeholder="Describe the ad content, target audience, key message..." style={{
-              width: "100%", minHeight: 80, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 12, color: "#ddd", fontSize: 13, resize: "vertical",
+              width: "100%", minHeight: 80, background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 8, padding: 12, color: "#1a1a1a", fontSize: 13, resize: "vertical",
             }} />
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#C9A84C,#F6AD55)", color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Submit Request</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Submit Request</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -115,14 +115,14 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
         const stInfo = AD_REQUEST_STATUS[req.status] || AD_REQUEST_STATUS.requested;
         return (
           <div key={req.id} style={{
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+            background: "#ffffff", border: "1px solid #eeeee9",
             borderRadius: 12, padding: "16px 20px", marginBottom: 8,
             borderLeft: `3px solid ${stInfo.color}`,
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Outfit'", fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{req.eventName}</span>
+                  <span style={{ fontFamily: "'Sora'", fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
                   <select
                     value={req.status}
                     onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
@@ -131,11 +131,11 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
                     {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
                   <span>💰 <strong style={{ color: "#FFB300" }}>₹{parseFloat(req.budget).toLocaleString("en-IN")}</strong></span>
                   {req.startDate && <span>📅 {formatDate(req.startDate)} → {req.endDate ? formatDate(req.endDate) : "TBD"}</span>}
                   {req.requestedBy && <span>👤 {req.requestedBy}</span>}
-                  <span style={{ color: "rgba(255,255,255,0.3)" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>
+                  <span style={{ color: "#d1d5db" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: req.brief ? 8 : 0 }}>
                   {(req.pages || []).map(pid => {
@@ -143,7 +143,7 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
                     return pg ? <span key={pid} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: `${pg.color}18`, color: pg.color, fontWeight: 600 }}>{pg.name}</span> : null;
                   })}
                 </div>
-                {req.brief && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, background: "rgba(255,255,255,0.02)", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
+                {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
               </div>
               <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer" }}>✕</button>
             </div>

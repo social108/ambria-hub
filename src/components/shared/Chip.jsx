@@ -1,9 +1,9 @@
 export default function Chip({ children, active, onClick }) {
   return (
     <button onClick={onClick} style={{
-      padding: "5px 14px", borderRadius: 20, border: `1px solid ${active ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)"}`,
-      background: active ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.03)",
-      color: active ? "#C9A84C" : "rgba(255,255,255,0.5)",
+      padding: "5px 14px", borderRadius: 20, border: `1px solid ${active ? "#1a1a1a" : "#e5e5e0"}`,
+      background: active ? "rgba(26,26,26,0.08)" : "#ffffff",
+      color: active ? "#1a1a1a" : "#9ca3af",
       fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
     }}>{children}</button>
   );

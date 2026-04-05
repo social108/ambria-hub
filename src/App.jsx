@@ -7,9 +7,9 @@ function AppContent() {
 
   if (loading) return (
     <div style={{
-      background: "#08080e", minHeight: "100vh", display: "flex",
+      background: "#F7F6F3", minHeight: "100vh", display: "flex",
       alignItems: "center", justifyContent: "center",
-      color: "#666", fontFamily: "sans-serif",
+      color: "#9ca3af", fontFamily: "sans-serif",
     }}>
       Loading...
     </div>

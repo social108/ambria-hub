@@ -12,10 +12,10 @@ import AdRequestsView from "../components/AdRequestsView.jsx";
 import PagesView from "../components/PagesView.jsx";
 
 const roleBadgeColors = {
-  admin: { bg: "rgba(201,168,76,0.2)", color: "#C9A84C" },
-  creative: { bg: "rgba(66,165,245,0.2)", color: "#42A5F5" },
-  venue_manager: { bg: "rgba(102,187,106,0.2)", color: "#66BB6A" },
-  viewer: { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" },
+  admin: { bg: "rgba(201,168,76,0.15)", color: "#92750a" },
+  creative: { bg: "rgba(66,165,245,0.12)", color: "#1976D2" },
+  venue_manager: { bg: "rgba(102,187,106,0.12)", color: "#2E7D32" },
+  viewer: { bg: "#f3f2ef", color: "#6b7280" },
 };
 
 export default function Dashboard() {
@@ -73,19 +73,19 @@ export default function Dashboard() {
   };
 
   if (loading) return (
-    <div style={{ background: "#08080e", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontFamily: "sans-serif" }}>
+    <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>
       Loading Ambria Hub...
     </div>
   );
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#08080e", minHeight: "100vh", color: "#ddd" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F3", minHeight: "100vh", color: "#1a1a1a" }}>
       {/* Offline banner */}
       {offline && (
         <div style={{
-          background: "rgba(246,173,85,0.15)", color: "#F6AD55",
+          background: "rgba(255,179,0,0.1)", color: "#92400e",
           textAlign: "center", padding: "6px 0", fontSize: 12, fontWeight: 600,
-          borderBottom: "1px solid rgba(246,173,85,0.3)",
+          borderBottom: "1px solid rgba(255,179,0,0.2)",
         }}>
           You're offline — changes won't sync
         </div>
@@ -94,9 +94,9 @@ export default function Dashboard() {
       {/* Sync error toast */}
       {syncError && (
         <div style={{
-          background: "rgba(239,83,80,0.15)", color: "#EF5350",
+          background: "rgba(239,83,80,0.08)", color: "#dc2626",
           textAlign: "center", padding: "6px 0", fontSize: 12, fontWeight: 600,
-          borderBottom: "1px solid rgba(239,83,80,0.3)",
+          borderBottom: "1px solid rgba(239,83,80,0.2)",
         }}>
           {syncError}
         </div>
@@ -105,10 +105,10 @@ export default function Dashboard() {
       {/* NAV */}
       <nav style={{
         display: "flex", alignItems: "center", gap: 8, padding: "14px 24px",
-        background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)",
-        position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(20px)",
+        background: "#ffffff", borderBottom: "1px solid #eeeee9",
+        position: "sticky", top: 0, zIndex: 100,
       }}>
-        <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: 18, background: "linear-gradient(135deg,#C9A84C,#F6AD55)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginRight: 20 }}>
+        <div style={{ fontFamily: "'Sora'", fontWeight: 800, fontSize: 18, color: "#1a1a1a", marginRight: 20 }}>
           AMBRIA HUB
         </div>
         {[
@@ -120,8 +120,8 @@ export default function Dashboard() {
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: tab === t.id ? "rgba(201,168,76,0.2)" : "transparent",
-            color: tab === t.id ? "#C9A84C" : "rgba(255,255,255,0.45)",
+            background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
+            color: tab === t.id ? "#1a1a1a" : "#9ca3af",
             transition: "all 0.2s", position: "relative",
           }}>
             {t.label}
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
         {/* Right side: user info + logout */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{displayName}</span>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>{displayName}</span>
           <span style={{
             fontSize: 10,
             fontWeight: 700,
@@ -164,14 +164,14 @@ export default function Dashboard() {
             style={{
               background: "none",
               border: "none",
-              color: "rgba(255,255,255,0.35)",
+              color: "#6b7280",
               fontSize: 12,
               cursor: loggingOut ? "default" : "pointer",
               padding: "4px 8px",
               transition: "color 0.2s",
             }}
-            onMouseEnter={(e) => { e.target.style.color = "#EF5350"; }}
-            onMouseLeave={(e) => { e.target.style.color = "rgba(255,255,255,0.35)"; }}
+            onMouseEnter={(e) => { e.target.style.color = "#dc2626"; }}
+            onMouseLeave={(e) => { e.target.style.color = "#6b7280"; }}
           >
             {loggingOut ? "..." : "Logout"}
           </button>

@@ -34,10 +34,10 @@ export default function Login() {
   const inputStyle = {
     width: "100%",
     padding: "12px 14px",
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8,
-    color: "#fff",
+    background: "#f5f4f1",
+    border: "1px solid #e5e5e0",
+    borderRadius: 10,
+    color: "#1a1a1a",
     fontSize: 14,
     fontFamily: "'DM Sans', sans-serif",
     outline: "none",
@@ -51,14 +51,14 @@ export default function Login() {
     cursor: "pointer",
     fontSize: 13,
     fontWeight: 600,
-    background: active ? "rgba(201,168,76,0.2)" : "transparent",
-    color: active ? "#C9A84C" : "rgba(255,255,255,0.45)",
+    background: active ? "#1a1a1a" : "transparent",
+    color: active ? "#fff" : "#9ca3af",
     transition: "all 0.2s",
   });
 
   return (
     <div style={{
-      background: "#08080e",
+      background: "#F7F6F3",
       minHeight: "100vh",
       display: "flex",
       alignItems: "center",
@@ -68,21 +68,20 @@ export default function Login() {
       <div style={{
         width: "100%",
         maxWidth: 400,
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 16,
+        border: "1px solid #eeeee9",
+        borderRadius: 20,
         padding: "40px 32px 32px",
-        background: "rgba(255,255,255,0.02)",
+        background: "#ffffff",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
       }}>
         {/* Logo */}
         <div style={{
           textAlign: "center",
           marginBottom: 28,
-          fontFamily: "'Outfit'",
+          fontFamily: "'Sora'",
           fontWeight: 800,
           fontSize: 26,
-          background: "linear-gradient(135deg,#C9A84C,#F6AD55)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          color: "#1a1a1a",
         }}>
           AMBRIA HUB
         </div>
@@ -123,8 +122,8 @@ export default function Login() {
             style={inputStyle}
           />
 
-          {error && <div style={{ color: "#EF5350", fontSize: 13 }}>{error}</div>}
-          {success && <div style={{ color: "#66BB6A", fontSize: 13 }}>{success}</div>}
+          {error && <div style={{ color: "#dc2626", fontSize: 13 }}>{error}</div>}
+          {success && <div style={{ color: "#16a34a", fontSize: 13 }}>{success}</div>}
 
           <button
             type="submit"
@@ -132,12 +131,12 @@ export default function Login() {
             style={{
               padding: "12px 0",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 10,
               cursor: busy ? "default" : "pointer",
               fontSize: 14,
-              fontWeight: 700,
-              background: "linear-gradient(135deg,#C9A84C,#F6AD55)",
-              color: "#000",
+              fontWeight: 600,
+              background: "#1a1a1a",
+              color: "#fff",
               opacity: busy ? 0.6 : 1,
               transition: "opacity 0.2s",
               marginTop: 4,
@@ -154,7 +153,7 @@ export default function Login() {
           textAlign: "center",
           marginTop: 32,
           fontSize: 11,
-          color: "rgba(255,255,255,0.25)",
+          color: "#9ca3af",
         }}>
           Ambria &middot; Get Your Venue Events Pvt Ltd
         </div>

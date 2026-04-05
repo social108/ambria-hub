@@ -1,17 +1,35 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient.js";
 import { EVENTS } from "../lib/events.js";
 
-export default function useEvents() {
+export default function useEvents({ onSyncError } = {}) {
   const [customEvents, setCustomEvents] = useState([]);
   const [builtinOverrides, setBuiltinOverrides] = useState({}); // { [id]: { overrides, hidden } }
   const [loading, setLoading] = useState(true);
+  const retryCount = useRef(0);
+  const retryTimer = useRef(null);
 
   const fetchData = useCallback(async () => {
     const [ceRes, boRes] = await Promise.all([
       supabase.from("custom_events").select("*").order("date", { ascending: true }),
       supabase.from("builtin_overrides").select("*"),
     ]);
+
+    if (ceRes.error || boRes.error) {
+      const err = ceRes.error || boRes.error;
+      console.error("useEvents fetch error:", err);
+      if (retryCount.current < 3) {
+        retryCount.current++;
+        onSyncError?.("Sync error — retrying...");
+        retryTimer.current = setTimeout(fetchData, 5000);
+        return;
+      }
+      onSyncError?.("Sync failed after retries");
+      setLoading(false);
+      return;
+    }
+
+    retryCount.current = 0;
 
     if (ceRes.data) {
       setCustomEvents(ceRes.data.map(row => ({
@@ -37,9 +55,12 @@ export default function useEvents() {
     }
 
     setLoading(false);
-  }, []);
+  }, [onSyncError]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    return () => clearTimeout(retryTimer.current);
+  }, [fetchData]);
 
   // Merge built-in EVENTS with overrides + custom events — same logic as original
   const allEvents = useMemo(() => {
@@ -78,14 +99,14 @@ export default function useEvents() {
       note: evt.note || "",
     };
     const { error } = await supabase.from("custom_events").insert(row);
-    if (error) { console.error("addEvent error:", error); return; }
+    if (error) { console.error("addEvent error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setCustomEvents(prev => [...prev, {
       id: newId, name: evt.name, date: evt.date, cat: evt.cat,
       actions: evt.actions || [], pages: evt.pages || [],
       priority: evt.priority ?? 2, adLeadDays: evt.adLeadDays || 15,
       note: evt.note || "", custom: true,
     }]);
-  }, []);
+  }, [onSyncError]);
 
   const updateEvent = useCallback(async (id, updates, isBuiltin) => {
     if (isBuiltin) {
@@ -97,7 +118,7 @@ export default function useEvents() {
         overrides: merged,
         hidden: builtinOverrides[id]?.hidden || false,
       });
-      if (error) { console.error("updateEvent builtin error:", error); return; }
+      if (error) { console.error("updateEvent builtin error:", error); onSyncError?.("Sync error — retrying..."); return; }
       setBuiltinOverrides(prev => ({
         ...prev,
         [id]: { ...prev[id], overrides: merged, hidden: prev[id]?.hidden || false },
@@ -113,10 +134,10 @@ export default function useEvents() {
       if (updates.adLeadDays !== undefined) row.ad_lead_days = updates.adLeadDays;
       if (updates.note !== undefined) row.note = updates.note;
       const { error } = await supabase.from("custom_events").update(row).eq("id", id);
-      if (error) { console.error("updateEvent custom error:", error); return; }
+      if (error) { console.error("updateEvent custom error:", error); onSyncError?.("Sync error — retrying..."); return; }
       setCustomEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
     }
-  }, [builtinOverrides]);
+  }, [builtinOverrides, onSyncError]);
 
   const deleteEvent = useCallback(async (id, isBuiltin) => {
     if (isBuiltin) {
@@ -125,36 +146,36 @@ export default function useEvents() {
         overrides: builtinOverrides[id]?.overrides || {},
         hidden: true,
       });
-      if (error) { console.error("deleteEvent builtin error:", error); return; }
+      if (error) { console.error("deleteEvent builtin error:", error); onSyncError?.("Sync error — retrying..."); return; }
       setBuiltinOverrides(prev => ({
         ...prev,
         [id]: { ...prev[id], overrides: prev[id]?.overrides || {}, hidden: true },
       }));
     } else {
       const { error } = await supabase.from("custom_events").delete().eq("id", id);
-      if (error) { console.error("deleteEvent custom error:", error); return; }
+      if (error) { console.error("deleteEvent custom error:", error); onSyncError?.("Sync error — retrying..."); return; }
       setCustomEvents(prev => prev.filter(e => e.id !== id));
     }
-  }, [builtinOverrides]);
+  }, [builtinOverrides, onSyncError]);
 
   const restoreBuiltin = useCallback(async (id) => {
     const { error } = await supabase.from("builtin_overrides").update({ hidden: false }).eq("id", id);
-    if (error) { console.error("restoreBuiltin error:", error); return; }
+    if (error) { console.error("restoreBuiltin error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setBuiltinOverrides(prev => ({
       ...prev,
       [id]: { ...prev[id], hidden: false },
     }));
-  }, []);
+  }, [onSyncError]);
 
   const resetBuiltin = useCallback(async (id) => {
     const { error } = await supabase.from("builtin_overrides").delete().eq("id", id);
-    if (error) { console.error("resetBuiltin error:", error); return; }
+    if (error) { console.error("resetBuiltin error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setBuiltinOverrides(prev => {
       const next = { ...prev };
       delete next[id];
       return next;
     });
-  }, []);
+  }, [onSyncError]);
 
   return {
     allEvents,

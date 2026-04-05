@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder } from "../lib/helpers.js";
 import useEvents from "../hooks/useEvents.js";
@@ -22,22 +22,42 @@ export default function Dashboard() {
   const { user, role, signOut } = useAuth();
   const [tab, setTab] = useState("reminders");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [offline, setOffline] = useState(!navigator.onLine);
+  const [syncError, setSyncError] = useState(null);
+
+  // Offline detection
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => setOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, []);
+
+  // Sync error handler — auto-dismiss after 4s
+  const handleSyncError = useCallback((msg) => {
+    setSyncError(msg);
+    setTimeout(() => setSyncError(null), 4000);
+  }, []);
 
   const {
     allEvents, addEvent, updateEvent, deleteEvent,
     restoreBuiltin, resetBuiltin, hiddenCount, hiddenBuiltins,
     loading: eventsLoading, refetch: refetchEvents,
-  } = useEvents();
+  } = useEvents({ onSyncError: handleSyncError });
 
   const {
     workflowData, updateWorkflow,
     loading: workflowLoading, refetch: refetchWorkflow,
-  } = useWorkflow();
+  } = useWorkflow({ onSyncError: handleSyncError });
 
   const {
     adRequests, addAdRequest, updateAdRequest, deleteAdRequest,
     loading: adsLoading, refetch: refetchAdRequests,
-  } = useAdRequests();
+  } = useAdRequests({ onSyncError: handleSyncError });
 
   useRealtimeSync({ refetchEvents, refetchWorkflow, refetchAdRequests });
 
@@ -60,6 +80,28 @@ export default function Dashboard() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#08080e", minHeight: "100vh", color: "#ddd" }}>
+      {/* Offline banner */}
+      {offline && (
+        <div style={{
+          background: "rgba(246,173,85,0.15)", color: "#F6AD55",
+          textAlign: "center", padding: "6px 0", fontSize: 12, fontWeight: 600,
+          borderBottom: "1px solid rgba(246,173,85,0.3)",
+        }}>
+          You're offline — changes won't sync
+        </div>
+      )}
+
+      {/* Sync error toast */}
+      {syncError && (
+        <div style={{
+          background: "rgba(239,83,80,0.15)", color: "#EF5350",
+          textAlign: "center", padding: "6px 0", fontSize: 12, fontWeight: 600,
+          borderBottom: "1px solid rgba(239,83,80,0.3)",
+        }}>
+          {syncError}
+        </div>
+      )}
+
       {/* NAV */}
       <nav style={{
         display: "flex", alignItems: "center", gap: 8, padding: "14px 24px",

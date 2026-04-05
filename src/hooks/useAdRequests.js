@@ -1,16 +1,31 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient.js";
 
-export default function useAdRequests() {
+export default function useAdRequests({ onSyncError } = {}) {
   const [adRequests, setAdRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const retryCount = useRef(0);
+  const retryTimer = useRef(null);
 
   const fetchData = useCallback(async () => {
     const { data, error } = await supabase
       .from("ad_requests")
       .select("*")
       .order("created_at", { ascending: true });
-    if (error) { console.error("useAdRequests fetch error:", error); setLoading(false); return; }
+    if (error) {
+      console.error("useAdRequests fetch error:", error);
+      if (retryCount.current < 3) {
+        retryCount.current++;
+        onSyncError?.("Sync error — retrying...");
+        retryTimer.current = setTimeout(fetchData, 5000);
+        return;
+      }
+      onSyncError?.("Sync failed after retries");
+      setLoading(false);
+      return;
+    }
+
+    retryCount.current = 0;
 
     setAdRequests((data || []).map(row => ({
       id: row.id,
@@ -25,9 +40,12 @@ export default function useAdRequests() {
       createdAt: row.created_at,
     })));
     setLoading(false);
-  }, []);
+  }, [onSyncError]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    return () => clearTimeout(retryTimer.current);
+  }, [fetchData]);
 
   const addAdRequest = useCallback(async (req) => {
     const newId = crypto.randomUUID();
@@ -43,7 +61,7 @@ export default function useAdRequests() {
       status: "requested",
     };
     const { error } = await supabase.from("ad_requests").insert(row);
-    if (error) { console.error("addAdRequest error:", error); return; }
+    if (error) { console.error("addAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setAdRequests(prev => [...prev, {
       id: newId,
       eventName: req.eventName,
@@ -56,7 +74,7 @@ export default function useAdRequests() {
       status: "requested",
       createdAt: new Date().toISOString(),
     }]);
-  }, []);
+  }, [onSyncError]);
 
   const updateAdRequest = useCallback(async (id, updates) => {
     const row = {};
@@ -69,15 +87,15 @@ export default function useAdRequests() {
     if (updates.requestedBy !== undefined) row.requested_by = updates.requestedBy;
     if (updates.pages !== undefined) row.pages = updates.pages;
     const { error } = await supabase.from("ad_requests").update(row).eq("id", id);
-    if (error) { console.error("updateAdRequest error:", error); return; }
+    if (error) { console.error("updateAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setAdRequests(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-  }, []);
+  }, [onSyncError]);
 
   const deleteAdRequest = useCallback(async (id) => {
     const { error } = await supabase.from("ad_requests").delete().eq("id", id);
-    if (error) { console.error("deleteAdRequest error:", error); return; }
+    if (error) { console.error("deleteAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setAdRequests(prev => prev.filter(a => a.id !== id));
-  }, []);
+  }, [onSyncError]);
 
   return { adRequests, addAdRequest, updateAdRequest, deleteAdRequest, loading, refetch: fetchData };
 }

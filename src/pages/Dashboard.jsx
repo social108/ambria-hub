@@ -108,8 +108,9 @@ export default function Dashboard() {
         background: "#ffffff", borderBottom: "1px solid #eeeee9",
         position: "sticky", top: 0, zIndex: 100,
       }}>
-        <div style={{ background: "#1a1a1a", borderRadius: 8, padding: "6px 14px", marginRight: 20, display: "flex", alignItems: "center" }}>
-          <img src={import.meta.env.BASE_URL + "ambria-logo.png"} alt="Ambria Hub" style={{ height: 20 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 20 }}>
+          <img src={import.meta.env.BASE_URL + "logo.png"} alt="Ambria" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
+          <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
         </div>
         {[
           { id: "reminders", label: "🔔 Reminders" },

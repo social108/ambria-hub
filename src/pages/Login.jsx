@@ -76,9 +76,14 @@ export default function Login() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ display: "inline-block", background: "#1a1a1a", borderRadius: 14, padding: "14px 24px" }}>
-            <img src={import.meta.env.BASE_URL + "ambria-logo.png"} alt="Ambria Hub" style={{ height: 36, display: "block" }} />
-          </div>
+          <img src={import.meta.env.BASE_URL + "logo.png"} alt="Ambria" style={{
+            width: 80, height: 80, borderRadius: "50%", objectFit: "cover",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+          }} />
+          <div style={{
+            fontFamily: "'Sora'", fontWeight: 700, fontSize: 18, color: "#1a1a1a",
+            letterSpacing: 2, marginTop: 12,
+          }}>AMBRIA HUB</div>
         </div>
 
         {/* Tabs */}

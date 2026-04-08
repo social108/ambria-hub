@@ -75,15 +75,10 @@ export default function Login() {
         boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
       }}>
         {/* Logo */}
-        <div style={{
-          textAlign: "center",
-          marginBottom: 28,
-          fontFamily: "'Sora'",
-          fontWeight: 800,
-          fontSize: 26,
-          color: "#1a1a1a",
-        }}>
-          AMBRIA HUB
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ display: "inline-block", background: "#1a1a1a", borderRadius: 14, padding: "14px 24px" }}>
+            <img src={import.meta.env.BASE_URL + "ambria-logo.png"} alt="Ambria Hub" style={{ height: 36, display: "block" }} />
+          </div>
         </div>
 
         {/* Tabs */}

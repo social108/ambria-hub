@@ -10,6 +10,7 @@ import CalendarView from "../components/CalendarView.jsx";
 import WorkflowView from "../components/WorkflowView.jsx";
 import AdRequestsView from "../components/AdRequestsView.jsx";
 import PagesView from "../components/PagesView.jsx";
+import logo from "../assets/logo.png";
 
 const roleBadgeColors = {
   admin: { bg: "rgba(201,168,76,0.15)", color: "#92750a" },
@@ -110,7 +111,7 @@ export default function Dashboard() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 20 }}>
           <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-            <img src={import.meta.env.BASE_URL + "logo.png"} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
           <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
         </div>

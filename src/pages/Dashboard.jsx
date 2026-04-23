@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { supabase } from "../supabaseClient.js";
 import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder } from "../lib/helpers.js";
@@ -30,8 +30,9 @@ export default function Dashboard() {
   const [syncError, setSyncError] = useState(null);
   const [showPwModal, setShowPwModal] = useState(false);
   const [pwForm, setPwForm] = useState({ newPw: "", confirmPw: "" });
-  const [pwStatus, setPwStatus] = useState(null); // { type: "error"|"success", msg }
+  const [pwStatus, setPwStatus] = useState(null);
   const [pwSaving, setPwSaving] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const mob = useIsMobile();
 
   const handleChangePassword = async () => {
@@ -53,6 +54,12 @@ export default function Dashboard() {
     }
   };
 
+  // Lock body scroll when drawer open
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [drawerOpen]);
+
   // Offline detection
   useEffect(() => {
     const goOffline = () => setOffline(true);
@@ -65,7 +72,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Sync error handler — auto-dismiss after 4s
   const handleSyncError = useCallback((msg) => {
     setSyncError(msg);
     setTimeout(() => setSyncError(null), 4000);
@@ -100,6 +106,33 @@ export default function Dashboard() {
     try { await signOut(); } catch { setLoggingOut(false); }
   };
 
+  // Compute urgent count once, reuse in top bar and drawer
+  const urgentCount = useMemo(() => {
+    if (!allEvents) return 0;
+    return allEvents.filter(e => {
+      const d = daysUntil(e.date);
+      if (d < 0) return false;
+      const hasAd = (e.actions || []).includes("ad");
+      const adLead = e.adLeadDays || 15;
+      const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
+      const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
+      const storyDays = daysUntil(getStoryReminder(e.date));
+      return (d >= 0 && d <= 7) || (hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5) || (hasAd && adStartDays >= -2 && adStartDays <= 3) || (storyDays >= -1 && storyDays <= 3);
+    }).length;
+  }, [allEvents]);
+
+  const navTabs = useMemo(() => {
+    const tabs = [
+      { id: "reminders", icon: "🔔", label: "Reminders" },
+      { id: "calendar", icon: "◎", label: "Calendar" },
+      { id: "workflow", icon: "✦", label: "Workflow" },
+      { id: "ads", icon: "▲", label: "Ad Requests" },
+      { id: "pages", icon: "◆", label: "Pages" },
+    ];
+    if (role === "admin") tabs.push({ id: "team", icon: "👥", label: "Team" });
+    return tabs;
+  }, [role]);
+
   if (loading) return (
     <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>
       Loading Ambria Hub...
@@ -110,6 +143,9 @@ export default function Dashboard() {
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F3", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         .dash-nav-tabs::-webkit-scrollbar { display: none; }
+        @keyframes drawerSlideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes drawerOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pwFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
       `}</style>
 
       {/* Offline banner */}
@@ -134,113 +170,230 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* NAV */}
-      <nav style={{
-        display: "flex", alignItems: "center", gap: mob ? 6 : 8, padding: mob ? "10px 12px" : "14px 24px",
-        background: "#ffffff", borderBottom: "1px solid #eeeee9",
-        position: "sticky", top: 0, zIndex: 100,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: mob ? 6 : 10, marginRight: mob ? 8 : 20, flexShrink: 0 }}>
-          <div style={{ width: mob ? 26 : 32, height: mob ? 26 : 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-            <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          </div>
-          {!mob && <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>}
-        </div>
-        <div className="dash-nav-tabs" style={{
-          display: "flex", gap: mob ? 4 : 8, flex: 1, minWidth: 0,
-          overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+      {/* ═══ MOBILE TOP BAR ═══ */}
+      {mob && (
+        <nav style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 16px", height: 56,
+          background: "#ffffff", borderBottom: "1px solid #eeeee9",
+          position: "sticky", top: 0, zIndex: 1000,
         }}>
-          {[
-            { id: "reminders", icon: "🔔", label: "Reminders" },
-            { id: "calendar", icon: "◎", label: "Calendar" },
-            { id: "workflow", icon: "✦", label: "Workflow" },
-            { id: "ads", icon: "▲", label: "Ad Requests" },
-            { id: "pages", icon: "◆", label: "Pages" },
-            ...(role === "admin" ? [{ id: "team", icon: "👥", label: "Team" }] : []),
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: mob ? "6px 12px" : "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
-              fontSize: mob ? 11 : 13, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
-              background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
-              color: tab === t.id ? "#1a1a1a" : "#9ca3af",
-              transition: "all 0.2s", position: "relative",
-              display: "flex", alignItems: "center", gap: 4,
-            }}>
-              <span style={{ fontSize: mob ? 14 : 14 }}>{t.icon}</span>
-              <span>{t.label}</span>
-              {t.id === "reminders" && (() => {
-                const urgentCount = allEvents.filter(e => {
-                  const d = daysUntil(e.date);
-                  if (d < 0) return false;
-                  const hasAd = (e.actions || []).includes("ad");
-                  const adLead = e.adLeadDays || 15;
-                  const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
-                  const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
-                  const storyDays = daysUntil(getStoryReminder(e.date));
-                  return (d >= 0 && d <= 7) || (hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5) || (hasAd && adStartDays >= -2 && adStartDays <= 3) || (storyDays >= -1 && storyDays <= 3);
-                }).length;
-                return urgentCount > 0 ? (
-                  <span style={{ position: "absolute", top: -2, right: -4, background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
-                ) : null;
-              })()}
-            </button>
-          ))}
-        </div>
-
-        {/* Right side: user info + logout */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: mob ? 6 : 10, flexShrink: 0 }}>
-          {!mob && <span style={{ fontSize: 12, color: "#6b7280" }}>{displayName}</span>}
-          {!mob && (
-            <span style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "3px 8px",
-              borderRadius: 6,
-              background: badge.bg,
-              color: badge.color,
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-            }}>
-              {(role || "viewer").replace("_", " ")}
-            </span>
-          )}
+          {/* Hamburger */}
           <button
-            onClick={() => { setShowPwModal(true); setPwStatus(null); setPwForm({ newPw: "", confirmPw: "" }); }}
-            style={{
-              background: "none", border: "none", color: "#9ca3af",
-              fontSize: 11, cursor: "pointer", padding: "4px 6px", transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => { e.target.style.color = "#1a1a1a"; }}
-            onMouseLeave={(e) => { e.target.style.color = "#9ca3af"; }}
+            onClick={() => setDrawerOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, width: 36, height: 36, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 4 }}
           >
-            Password
+            <div style={{ width: 20, height: 2, background: "#1a1a1a", borderRadius: 1 }} />
+            <div style={{ width: 20, height: 2, background: "#1a1a1a", borderRadius: 1 }} />
+            <div style={{ width: 20, height: 2, background: "#1a1a1a", borderRadius: 1 }} />
           </button>
+
+          {/* Center: logo + title */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+              <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 13, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+            {urgentCount > 0 && (
+              <span style={{
+                position: "absolute", top: -6, right: -18,
+                background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800,
+                borderRadius: "50%", width: 18, height: 18,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
+            )}
+          </div>
+
+          {/* Logout */}
           <button
             onClick={handleLogout}
             disabled={loggingOut}
             style={{
-              background: "none",
-              border: "none",
-              color: "#6b7280",
-              fontSize: 12,
-              cursor: loggingOut ? "default" : "pointer",
-              padding: "4px 8px",
-              transition: "color 0.2s",
+              background: "none", border: "none", color: "#6b7280",
+              fontSize: 12, cursor: loggingOut ? "default" : "pointer", padding: "4px 8px",
             }}
-            onMouseEnter={(e) => { e.target.style.color = "#dc2626"; }}
-            onMouseLeave={(e) => { e.target.style.color = "#6b7280"; }}
           >
             {loggingOut ? "..." : "Logout"}
           </button>
-        </div>
-      </nav>
+        </nav>
+      )}
+
+      {/* ═══ MOBILE DRAWER ═══ */}
+      {mob && (
+        <>
+          {/* Overlay */}
+          {drawerOpen && (
+            <div
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)",
+                zIndex: 1001, animation: "drawerOverlayIn 0.2s ease",
+              }}
+            />
+          )}
+
+          {/* Drawer panel */}
+          <div style={{
+            position: "fixed", top: 0, left: 0, bottom: 0,
+            width: 280, background: "#fff", zIndex: 1002,
+            transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
+            transition: "transform 0.25s ease",
+            display: "flex", flexDirection: "column",
+            boxShadow: drawerOpen ? "4px 0 20px rgba(0,0,0,0.1)" : "none",
+          }}>
+            {/* Drawer header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                  <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+                <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 14, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+              </div>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 22, cursor: "pointer", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+            </div>
+
+            {/* Nav items */}
+            <div style={{ flex: 1, overflowY: "auto", paddingTop: 8 }}>
+              {navTabs.map(t => {
+                const isActive = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => { setTab(t.id); setDrawerOpen(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 14,
+                      width: "100%", padding: "14px 24px",
+                      background: isActive ? "#f5f4f1" : "transparent",
+                      border: "none", borderLeft: isActive ? "3px solid #1a1a1a" : "3px solid transparent",
+                      cursor: "pointer", transition: "background 0.15s",
+                      fontSize: 15, fontWeight: isActive ? 700 : 500, color: "#1a1a1a",
+                      textAlign: "left", position: "relative",
+                    }}
+                  >
+                    <span style={{ fontSize: 18, width: 24, textAlign: "center", flexShrink: 0 }}>{t.icon}</span>
+                    <span>{t.label}</span>
+                    {t.id === "reminders" && urgentCount > 0 && (
+                      <span style={{
+                        marginLeft: "auto", background: "#EF5350", color: "#fff",
+                        fontSize: 10, fontWeight: 800, borderRadius: 10,
+                        padding: "2px 7px", minWidth: 20, textAlign: "center",
+                      }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Bottom: user info + change password */}
+            <div style={{ borderTop: "1px solid #eeeee9", padding: "16px 24px" }}>
+              <button
+                onClick={() => { setDrawerOpen(false); setShowPwModal(true); setPwStatus(null); setPwForm({ newPw: "", confirmPw: "" }); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10, width: "100%",
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: "10px 0", fontSize: 13, color: "#6b7280", textAlign: "left",
+                }}
+              >
+                Change Password
+              </button>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{displayName}</div>
+                <span style={{
+                  display: "inline-block", marginTop: 4,
+                  fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6,
+                  background: badge.bg, color: badge.color,
+                  textTransform: "uppercase", letterSpacing: 0.5,
+                }}>
+                  {(role || "viewer").replace("_", " ")}
+                </span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ═══ DESKTOP NAV ═══ */}
+      {!mob && (
+        <nav style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "14px 24px",
+          background: "#ffffff", borderBottom: "1px solid #eeeee9",
+          position: "sticky", top: 0, zIndex: 100,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 20, flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+              <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+          </div>
+          <div className="dash-nav-tabs" style={{
+            display: "flex", gap: 8, flex: 1, minWidth: 0,
+            overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+          }}>
+            {navTabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+                fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
+                background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
+                color: tab === t.id ? "#1a1a1a" : "#9ca3af",
+                transition: "all 0.2s", position: "relative",
+                display: "flex", alignItems: "center", gap: 4,
+              }}>
+                <span style={{ fontSize: 14 }}>{t.icon}</span>
+                <span>{t.label}</span>
+                {t.id === "reminders" && urgentCount > 0 && (
+                  <span style={{ position: "absolute", top: -2, right: -4, background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Right side: user info + logout */}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>{displayName}</span>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6,
+              background: badge.bg, color: badge.color,
+              textTransform: "uppercase", letterSpacing: 0.5,
+            }}>
+              {(role || "viewer").replace("_", " ")}
+            </span>
+            <button
+              onClick={() => { setShowPwModal(true); setPwStatus(null); setPwForm({ newPw: "", confirmPw: "" }); }}
+              style={{
+                background: "none", border: "none", color: "#9ca3af",
+                fontSize: 11, cursor: "pointer", padding: "4px 6px", transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => { e.target.style.color = "#1a1a1a"; }}
+              onMouseLeave={(e) => { e.target.style.color = "#9ca3af"; }}
+            >
+              Password
+            </button>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              style={{
+                background: "none", border: "none", color: "#6b7280",
+                fontSize: 12, cursor: loggingOut ? "default" : "pointer",
+                padding: "4px 8px", transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => { e.target.style.color = "#dc2626"; }}
+              onMouseLeave={(e) => { e.target.style.color = "#6b7280"; }}
+            >
+              {loggingOut ? "..." : "Logout"}
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* Change Password Modal */}
       {showPwModal && (
         <div
           onClick={() => setShowPwModal(false)}
           style={{
-            position: "fixed", inset: 0, zIndex: 200,
+            position: "fixed", inset: 0, zIndex: 2000,
             background: "rgba(0,0,0,0.25)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
           }}
@@ -253,7 +406,6 @@ export default function Dashboard() {
               animation: "pwFadeIn 0.2s ease-out",
             }}
           >
-            <style>{`@keyframes pwFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
             <h3 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 18, margin: "0 0 18px" }}>Change Password</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>

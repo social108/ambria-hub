@@ -4,6 +4,7 @@ import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryRem
 import Chip from "./shared/Chip.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import FieldLabel from "./shared/FieldLabel.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
@@ -12,6 +13,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
   const [selectedReminder, setSelectedReminder] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const mob = useIsMobile();
 
   // Generate all reminders from all events
   const reminders = useMemo(() => {
@@ -150,7 +152,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
       <style>{`
         .reminder-card {
           background: #ffffff; border: 1px solid #eeeee9;
-          border-radius: 12px; padding: 14px 18px; margin-bottom: 6px;
+          border-radius: 12px; padding: ${mob ? "12px 14px" : "14px 18px"}; margin-bottom: 6px;
           transition: all 0.15s; position: relative; overflow: hidden;
           box-shadow: 0 2px 8px rgba(0,0,0,0.04);
           cursor: pointer;
@@ -167,7 +169,8 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
         }
         .rem-modal {
           background: #ffffff; border: 1px solid #e5e5e0; border-radius: 20px;
-          width: 580px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;
+          width: 580px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+          padding: ${mob ? "20px" : "28px"};
           animation: remSlideUp 0.25s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
         }
         @keyframes remFadeIn { from { opacity: 0 } to { opacity: 1 } }
@@ -179,36 +182,37 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
         .date-divider-label { font-family: 'Sora'; font-size: 14px; font-weight: 700; color: #374151; }
         .date-divider-sub { font-size: 11px; color: #9ca3af; }
         .reminder-type-icon {
-          width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
-          justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0;
+          width: ${mob ? "28px" : "34px"}; height: ${mob ? "28px" : "34px"}; border-radius: 10px; display: flex; align-items: center;
+          justify-content: center; font-size: ${mob ? "13px" : "16px"}; font-weight: 700; flex-shrink: 0;
         }
         .r-pages { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
-        .r-page-dot { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+        .r-page-dot { font-size: ${mob ? "8px" : "9px"}; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+        .rem-filter-row::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Reminders & Deadlines
         </h1>
-        <p style={{ fontSize: 13, color: "#9ca3af" }}>Auto-calculated creative deadlines, ad launch dates, and story reminders for every event</p>
+        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>Auto-calculated creative deadlines, ad launch dates, and story reminders for every event</p>
       </div>
 
       {/* Urgency stats */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
         {overdueCount > 0 && (
-          <div style={{ background: "rgba(239,83,80,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#EF5350" }}>{overdueCount}</span>
-            <span style={{ fontSize: 11, color: "#EF5350", textTransform: "uppercase", fontWeight: 600 }}>Overdue</span>
+          <div style={{ background: "rgba(239,83,80,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "10px 16px", display: "flex", alignItems: "center", gap: mob ? 6 : 10 }}>
+            <span style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 22, fontWeight: 700, color: "#EF5350" }}>{overdueCount}</span>
+            <span style={{ fontSize: mob ? 10 : 11, color: "#EF5350", textTransform: "uppercase", fontWeight: 600 }}>Overdue</span>
           </div>
         )}
-        <div style={{ background: "rgba(255,179,0,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#C9A84C" }}>{todayCount}</span>
-          <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>Today</span>
+        <div style={{ background: "rgba(255,179,0,0.06)", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "10px 16px", display: "flex", alignItems: "center", gap: mob ? 6 : 10 }}>
+          <span style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 22, fontWeight: 700, color: "#C9A84C" }}>{todayCount}</span>
+          <span style={{ fontSize: mob ? 10 : 11, color: "#9ca3af", textTransform: "uppercase" }}>Today</span>
         </div>
-        <div style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 700, color: "#FFB300" }}>{weekCount}</span>
-          <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>This Week</span>
+        <div style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "10px 16px", display: "flex", alignItems: "center", gap: mob ? 6 : 10 }}>
+          <span style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 22, fontWeight: 700, color: "#FFB300" }}>{weekCount}</span>
+          <span style={{ fontSize: mob ? 10 : 11, color: "#9ca3af", textTransform: "uppercase" }}>This Week</span>
         </div>
       </div>
 
@@ -222,7 +226,10 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+      <div className="rem-filter-row" style={{
+        display: "flex", gap: 6, marginBottom: 18,
+        ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+      }}>
         {[
           { v: "all_upcoming", l: "All Upcoming" },
           { v: "today", l: "Today" },
@@ -231,7 +238,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
           { v: "creative", l: "✎ Creative Deadlines" },
           { v: "ads", l: "▲ Ad Launch" },
           { v: "stories", l: "◎ Story Reminders" },
-        ].map(f => <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)}>{f.l}</Chip>)}
+        ].map(f => <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)} style={{ flexShrink: 0 }}>{f.l}</Chip>)}
       </div>
 
       {filtered.length === 0 && <EmptyState msg="No reminders match this filter. You're all caught up!" />}
@@ -259,21 +266,21 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
               return (
                 <div key={ri} className={cardClass} onClick={() => openDetail(r)}>
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: rt.color, borderRadius: "3px 0 0 3px" }} />
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: mob ? 10 : 14 }}>
                     <div className="reminder-type-icon" style={{ background: `${rt.color}18`, color: rt.color }}>
                       {rt.icon}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: rt.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{rt.label}</span>
                         {r.daysUntil === 0 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#92400e", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
                         {r.daysUntil < 0 && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.1)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
                         {r.daysUntil === 1 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TOMORROW</span>}
                       </div>
-                      <div style={{ fontFamily: "'Sora'", fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 }}>
+                      <div style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 }}>
                         {r.event.name}
                       </div>
-                      <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, marginBottom: 4 }}>
+                      <div style={{ fontSize: mob ? 11 : 12, color: "#6b7280", lineHeight: 1.5, marginBottom: 4 }}>
                         {r.message}
                       </div>
                       {(r.event.pages || []).length > 0 && (
@@ -285,7 +292,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                         </div>
                       )}
                       {(r.type === "creative_deadline" || r.type === "ad_start") && (
-                        <div style={{ marginTop: 6, display: "flex", gap: 10, fontSize: 10, color: "#d1d5db" }}>
+                        <div style={{ marginTop: 6, display: "flex", gap: mob ? 4 : 10, fontSize: mob ? 9 : 10, color: "#d1d5db", flexWrap: "wrap" }}>
                           <span>✎ Creative by {formatDate(getCreativeDeadline(r.event.date, r.event.adLeadDays || 15))}</span>
                           <span>→</span>
                           <span>▲ Ads from {formatDate(getAdStartDate(r.event.date, r.event.adLeadDays || 15))}</span>
@@ -294,7 +301,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                         </div>
                       )}
                     </div>
-                    <div style={{ textAlign: "right", minWidth: 50 }}>
+                    <div style={{ textAlign: "right", minWidth: 40, flexShrink: 0 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: priorityColors[r.event.priority] || "#78909C", background: `${priorityColors[r.event.priority] || "#78909C"}15`, padding: "2px 8px", borderRadius: 5, marginBottom: 4 }}>
                         P{r.event.priority}
                       </div>
@@ -328,11 +335,11 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                   {/* Header */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Sora'", fontSize: 22, fontWeight: 800, color: "#1a1a1a", marginBottom: 6 }}>
+                      <div style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 22, fontWeight: 800, color: "#1a1a1a", marginBottom: 6 }}>
                         {evt.name}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 14, color: "#6b7280" }}>
+                        <span style={{ fontSize: mob ? 12 : 14, color: "#6b7280" }}>
                           {formatDate(evt.date)} · <strong style={{ color: eventDays <= 0 ? "#EF5350" : eventDays <= 3 ? "#FFB300" : "#374151" }}>{countdownText}</strong>
                         </span>
                       </div>
@@ -426,14 +433,17 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                     <button onClick={startEdit} style={{
                       padding: "10px 24px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
+                      ...(mob ? { flex: 1 } : {}),
                     }}>Edit Event</button>
                     <button onClick={goToWorkflow} style={{
                       padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0",
                       background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", fontWeight: 600,
+                      ...(mob ? { flex: 1 } : {}),
                     }}>Go to Workflow</button>
                     <button onClick={closeDetail} style={{
                       padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0",
                       background: "transparent", color: "#9ca3af", fontSize: 13, cursor: "pointer",
+                      ...(mob ? { flex: 1 } : {}),
                     }}>Close</button>
                   </div>
                 </div>
@@ -442,7 +452,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Edit Event</div>
+                      <div style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 20, fontWeight: 700, color: "#1a1a1a" }}>Edit Event</div>
                       {!evt.custom && (
                         <span style={{ fontSize: 10, background: "rgba(66,165,245,0.12)", color: "#42A5F5", padding: "3px 10px", borderRadius: 6, fontWeight: 600 }}>Built-in</span>
                       )}
@@ -453,8 +463,8 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                     <button onClick={() => setEditMode(false)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-                    <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 14 }}>
+                    <div style={mob ? {} : { gridColumn: "1 / -1" }}>
                       <FieldLabel>Event Name</FieldLabel>
                       <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="e.g. Dussehra Mega Night" style={inputStyle} />
                     </div>
@@ -520,12 +530,13 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                     <button onClick={handleSave} style={{
                       padding: "10px 28px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
+                      ...(mob ? { flex: 1 } : {}),
                     }}>Save Changes</button>
-                    <button onClick={() => setEditMode(false)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                    <button onClick={() => setEditMode(false)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Cancel</button>
                     {!evt.custom && evt.edited && (
-                      <button onClick={handleReset} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>↺ Reset to Default</button>
+                      <button onClick={handleReset} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer", ...(mob ? { width: "100%" } : {}) }}>↺ Reset to Default</button>
                     )}
-                    <button onClick={handleDelete} style={{ marginLeft: "auto", padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={handleDelete} style={{ ...(mob ? { width: "100%" } : { marginLeft: "auto" }), padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       {evt.custom ? "Delete" : "Hide Event"}
                     </button>
                   </div>

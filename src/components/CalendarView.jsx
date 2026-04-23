@@ -4,8 +4,8 @@ import { EVENTS } from "../lib/events.js";
 import { daysUntil, formatDate } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
-const navBtnStyle = { background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "5px 14px", color: "#6b7280", fontSize: 18, cursor: "pointer", fontWeight: 600 };
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
 export default function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, deleteEvent, resetBuiltin, restoreBuiltin, hiddenCount, hiddenBuiltins }) {
@@ -13,30 +13,27 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [modal, setModal] = useState(null); // null | { mode: "add"|"edit", event?: obj } | { mode: "restore" }
+  const [modal, setModal] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [actionFilter, setActionFilter] = useState("All");
+  const mob = useIsMobile();
 
   // Calendar math
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
 
-  // Build grid: 6 rows × 7 cols
   const grid = useMemo(() => {
     const cells = [];
-    // Previous month trailing days
     for (let i = firstDay - 1; i >= 0; i--) {
       const d = prevMonthDays - i;
       const m = viewMonth === 0 ? 11 : viewMonth - 1;
       const y = viewMonth === 0 ? viewYear - 1 : viewYear;
       cells.push({ day: d, month: m, year: y, outside: true });
     }
-    // Current month
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({ day: d, month: viewMonth, year: viewYear, outside: false });
     }
-    // Next month leading days
     const remaining = 42 - cells.length;
     for (let d = 1; d <= remaining; d++) {
       const m = viewMonth === 11 ? 0 : viewMonth + 1;
@@ -46,7 +43,6 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
     return cells;
   }, [viewMonth, viewYear, firstDay, daysInMonth, prevMonthDays]);
 
-  // Map events to dates
   const eventsByDate = useMemo(() => {
     const map = {};
     allEvents.forEach(e => {
@@ -126,19 +122,21 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   const toggleFormAction = (a) => setForm(f => ({ ...f, actions: f.actions.includes(a) ? f.actions.filter(x => x !== a) : [...f.actions, a] }));
   const toggleFormPage = (p) => setForm(f => ({ ...f, pages: f.pages.includes(p) ? f.pages.filter(x => x !== p) : [...f.pages, p] }));
 
-  // Stats
   const monthEvents = allEvents.filter(e => {
     const d = new Date(e.date);
     return d.getMonth() === viewMonth && d.getFullYear() === viewYear && (actionFilter === "All" || e.actions.includes(actionFilter));
   });
 
+  const maxVisible = mob ? 2 : 3;
+  const navBtnStyle = { background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: mob ? "4px 10px" : "5px 14px", color: "#6b7280", fontSize: mob ? 16 : 18, cursor: "pointer", fontWeight: 600 };
+
   return (
     <div>
       <style>{`
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eeeee9; border-radius: 12px; overflow: hidden; border: 1px solid #eeeee9; }
-        .cal-header-cell { padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; background: #f8f8f6; }
+        .cal-header-cell { padding: ${mob ? "6px 2px" : "10px 4px"}; text-align: center; font-size: ${mob ? "9px" : "11px"}; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: ${mob ? "0" : "1px"}; background: #f8f8f6; }
         .cal-cell {
-          min-height: 100px; padding: 6px; background: #ffffff; position: relative;
+          min-height: ${mob ? "60px" : "100px"}; padding: ${mob ? "3px" : "6px"}; background: #ffffff; position: relative;
           cursor: pointer; transition: background 0.15s; vertical-align: top;
         }
         .cal-cell:hover { background: #f8f8f6; }
@@ -146,14 +144,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
         .cal-cell.today { background: rgba(180,140,50,0.06); }
         .cal-cell.selected { background: rgba(26,26,26,0.04); box-shadow: inset 0 0 0 1px rgba(26,26,26,0.15); }
         .cal-day-num {
-          font-family: 'Sora'; font-size: 13px; font-weight: 600; color: #6b7280;
-          width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-          border-radius: 50%; margin-bottom: 3px;
+          font-family: 'Sora'; font-size: ${mob ? "11px" : "13px"}; font-weight: 600; color: #6b7280;
+          width: ${mob ? "22px" : "26px"}; height: ${mob ? "22px" : "26px"}; display: flex; align-items: center; justify-content: center;
+          border-radius: 50%; margin-bottom: ${mob ? "1px" : "3px"};
         }
         .cal-day-num.today-num { background: #1a1a1a; color: #fff; font-weight: 800; }
         .cal-evt-dot {
-          display: flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 4px;
-          font-size: 9.5px; font-weight: 600; margin-bottom: 2px; cursor: pointer;
+          display: flex; align-items: center; gap: 3px; padding: 2px ${mob ? "3px" : "5px"}; border-radius: 4px;
+          font-size: ${mob ? "8px" : "9.5px"}; font-weight: 600; margin-bottom: 2px; cursor: pointer;
           overflow: hidden; white-space: nowrap; text-overflow: ellipsis; transition: all 0.15s;
           max-width: 100%;
         }
@@ -174,14 +172,15 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
         }
         .cal-modal {
           background: #ffffff; border: 1px solid #e5e5e0; border-radius: 20px;
-          width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;
+          width: ${mob ? "95vw" : "560px"}; max-width: 95vw; max-height: ${mob ? "85vh" : "90vh"}; overflow-y: auto;
+          padding: ${mob ? "20px" : "28px"};
           animation: calSlideUp 0.25s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
         }
         @keyframes calFadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes calSlideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
         .cal-sidebar {
           background: #ffffff; border: 1px solid #eeeee9;
-          border-radius: 12px; padding: 16px; margin-top: 16px; animation: calFadeIn 0.2s ease;
+          border-radius: 12px; padding: ${mob ? "12px" : "16px"}; margin-top: 16px; animation: calFadeIn 0.2s ease;
           box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .cal-sidebar-event {
@@ -190,32 +189,37 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
           transition: all 0.15s; cursor: pointer;
         }
         .cal-sidebar-event:hover { background: #f8f8f6; border-color: #e5e5e0; }
+        .cal-filter-row::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 2 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 2 }}>
             Events Calendar
           </h1>
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view · Hover + to add</p>
+          <p style={{ fontSize: mob ? 11 : 12, color: "#9ca3af" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view</p>
         </div>
         <button onClick={() => openAdd("")} style={{
           padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
           background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
+          ...(mob ? { width: "100%" } : {}),
         }}>+ Add Event</button>
       </div>
 
       {/* Month nav + filter */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <button onClick={() => navigateMonth(-1)} style={navBtnStyle}>‹</button>
-        <div style={{ fontFamily: "'Sora', serif", fontSize: 22, fontWeight: 700, color: "#1a1a1a", minWidth: 200, textAlign: "center" }}>
+        <div style={{ fontFamily: "'Sora', serif", fontSize: mob ? 18 : 22, fontWeight: 700, color: "#1a1a1a", minWidth: mob ? 140 : 200, textAlign: "center" }}>
           {MONTHS_FULL[viewMonth]} {viewYear}
         </div>
         <button onClick={() => navigateMonth(1)} style={navBtnStyle}>›</button>
         <button onClick={goToToday} style={{ ...navBtnStyle, fontSize: 11, padding: "5px 14px", borderRadius: 8, marginLeft: 4 }}>Today</button>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 4, flexWrap: "wrap" }}>
+        <div className="cal-filter-row" style={{
+          marginLeft: mob ? 0 : "auto", display: "flex", gap: 4, width: mob ? "100%" : "auto",
+          ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+        }}>
           <MiniChip active={actionFilter === "All"} onClick={() => setActionFilter("All")}>All</MiniChip>
           {Object.entries(ACTION_TYPES).map(([k, v]) => (
             <MiniChip key={k} active={actionFilter === k} onClick={() => setActionFilter(k)} color={v.color}>{v.icon} {v.label}</MiniChip>
@@ -225,8 +229,8 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
 
       {/* CALENDAR GRID */}
       <div className="cal-grid">
-        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
-          <div key={d} className="cal-header-cell">{d}</div>
+        {(mob ? ["S","M","T","W","T","F","S"] : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]).map((d, i) => (
+          <div key={i} className="cal-header-cell">{d}</div>
         ))}
         {grid.map((cell, i) => {
           const dateStr = cellDateStr(cell);
@@ -240,10 +244,10 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               onClick={() => !cell.outside && openView(dateStr)}
             >
               <div className={`cal-day-num ${todayCell ? "today-num" : ""}`}>{cell.day}</div>
-              {!cell.outside && (
+              {!cell.outside && !mob && (
                 <button className="cal-add-btn" onClick={(ev) => { ev.stopPropagation(); openAdd(dateStr); }}>+</button>
               )}
-              {evts.slice(0, 3).map((evt, ei) => {
+              {evts.slice(0, maxVisible).map((evt, ei) => {
                 const priorityColors = ["#78909C","#FFB300","#F4511E","#D50000"];
                 const pColor = priorityColors[evt.priority] || "#78909C";
                 return (
@@ -256,13 +260,13 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   >
                     {evt.actions?.includes("ad") && <span style={{ fontSize: 8 }}>▲</span>}
                     {evt.actions?.includes("host") && <span style={{ fontSize: 8 }}>★</span>}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{evt.name}</span>
-                    {evt.custom && <span style={{ fontSize: 7, opacity: 0.6, marginLeft: "auto" }}>✎</span>}
+                    {!mob && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{evt.name}</span>}
+                    {mob && evts.length <= maxVisible && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{evt.name}</span>}
                   </div>
                 );
               })}
-              {evts.length > 3 && (
-                <div style={{ fontSize: 9, color: "#d1d5db", padding: "1px 5px" }}>+{evts.length - 3} more</div>
+              {evts.length > maxVisible && (
+                <div style={{ fontSize: mob ? 8 : 9, color: "#d1d5db", padding: "1px 5px" }}>+{evts.length - maxVisible} more</div>
               )}
             </div>
           );
@@ -273,7 +277,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
       {selectedDate && (eventsByDate[selectedDate]?.length > 0) && (
         <div className="cal-sidebar">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ fontFamily: "'Sora'", fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>
+            <div style={{ fontFamily: "'Sora'", fontSize: mob ? 14 : 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)} — {eventsByDate[selectedDate].length} event{eventsByDate[selectedDate].length > 1 ? "s" : ""}
             </div>
             <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
@@ -284,15 +288,15 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               <div key={i} className="cal-sidebar-event" onClick={() => openEdit(evt)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 4, height: 28, borderRadius: 2, background: priorityColors[evt.priority] || "#78909C" }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Sora'", fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Sora'", fontSize: mob ? 13 : 14, fontWeight: 600, color: "#1a1a1a", flexWrap: "wrap" }}>
                       {evt.name}
                       {evt.custom && <span style={{ fontSize: 9, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "1px 6px", borderRadius: 4 }}>Custom</span>}
                       {!evt.custom && evt.edited && <span style={{ fontSize: 9, background: "rgba(66,165,245,0.15)", color: "#42A5F5", padding: "1px 6px", borderRadius: 4 }}>Edited</span>}
                     </div>
                     <div style={{ fontSize: 11, color: "#9ca3af" }}>{evt.cat}</div>
                   </div>
-                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer" }}>✕</button>
+                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer", flexShrink: 0 }}>✕</button>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: evt.note ? 6 : 0 }}>
                   {(evt.actions || []).map(a => {
@@ -334,20 +338,20 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
             {modal.mode === "restore" ? (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Restore Hidden Events</div>
+                  <div style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 20, fontWeight: 700, color: "#1a1a1a" }}>Restore Hidden Events</div>
                   <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
                 {hiddenBuiltins.map(hid => {
                   const original = EVENTS.find(e => `builtin-${e.date}-${e.name}` === hid);
                   if (!original) return null;
                   return (
-                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, marginBottom: 6 }}>
-                      <div>
+                    <div key={hid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, marginBottom: 6, gap: 8 }}>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{original.name}</div>
                         <div style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(original.date)} · {original.cat}</div>
                       </div>
-                      <button onClick={() => { restoreBuiltin(hid); if (hiddenBuiltins.length <= 1) setModal(null); }} style={{ background: "rgba(102,187,106,0.15)", border: "1px solid rgba(102,187,106,0.3)", borderRadius: 8, padding: "6px 14px", color: "#66BB6A", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Restore</button>
-                    </div>
+                      <button onClick={() => { restoreBuiltin(hid); if (hiddenBuiltins.length <= 1) setModal(null); }} style={{ background: "rgba(102,187,106,0.15)", border: "1px solid rgba(102,187,106,0.3)", borderRadius: 8, padding: "6px 14px", color: "#66BB6A", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Restore</button>
+                  </div>
                   );
                 })}
               </div>
@@ -356,7 +360,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>
+                    <div style={{ fontFamily: "'Sora'", fontSize: mob ? 18 : 20, fontWeight: 700, color: "#1a1a1a" }}>
                       {modal.mode === "add" ? "Add New Event" : "Edit Event"}
                     </div>
                     {modal.mode === "edit" && !modal.event?.custom && (
@@ -369,8 +373,8 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-                  <div style={{ gridColumn: "1 / -1" }}>
+                <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 14 }}>
+                  <div style={mob ? {} : { gridColumn: "1 / -1" }}>
                     <FieldLabel>Event Name</FieldLabel>
                     <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="e.g. Dussehra Mega Night" style={inputStyle} />
                   </div>
@@ -436,13 +440,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   <button onClick={handleSave} style={{
                     padding: "10px 28px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
+                    ...(mob ? { flex: 1 } : {}),
                   }}>{modal.mode === "add" ? "Add Event" : "Save Changes"}</button>
-                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => setModal(null)} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Cancel</button>
                   {modal.mode === "edit" && !modal.event?.custom && modal.event?.edited && (
-                    <button onClick={() => handleReset(modal.event)} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>↺ Reset to Default</button>
+                    <button onClick={() => handleReset(modal.event)} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer", ...(mob ? { width: "100%" } : {}) }}>↺ Reset to Default</button>
                   )}
                   {modal.mode === "edit" && (
-                    <button onClick={() => handleDelete(modal.event)} style={{ marginLeft: "auto", padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={() => handleDelete(modal.event)} style={{ ...(mob ? { width: "100%" } : { marginLeft: "auto" }), padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       {modal.event?.custom ? "Delete" : "Hide Event"}
                     </button>
                   )}

@@ -4,11 +4,13 @@ import { formatDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
 export default function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ eventName: "", pages: [], budget: "", startDate: "", endDate: "", brief: "", requestedBy: "" });
   const [statusFilter, setStatusFilter] = useState("All");
+  const mob = useIsMobile();
 
   const filteredAds = statusFilter === "All" ? data.adRequests : data.adRequests.filter(a => a.status === statusFilter);
   const totalBudget = data.adRequests.reduce((s, a) => s + (parseFloat(a.budget) || 0), 0);
@@ -27,38 +29,46 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
 
   return (
     <div>
+      <style>{`
+        .ad-budget-row::-webkit-scrollbar { display: none; }
+        .ad-filter-row::-webkit-scrollbar { display: none; }
+      `}</style>
+
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
             Ad Budget & Requests
           </h1>
-          <p style={{ fontSize: 13, color: "#9ca3af" }}>Venue team submits ad requests → Creative team builds & runs</p>
+          <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>Venue team submits ad requests → Creative team builds & runs</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} style={{
           padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
           background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
+          ...(mob ? { width: "100%" } : {}),
         }}>+ New Ad Request</button>
       </div>
 
       {/* Budget Overview */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+      <div className="ad-budget-row" style={{
+        display: "flex", gap: 10, marginBottom: 16,
+        ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+      }}>
         {[
           { label: "Total Requests", val: data.adRequests.length, color: "#C9A84C" },
           { label: "Total Budget", val: `₹${totalBudget.toLocaleString("en-IN")}`, color: "#FFB300" },
           { label: "Active/Approved", val: `₹${liveBudget.toLocaleString("en-IN")}`, color: "#66BB6A" },
         ].map(s => (
-          <div key={s.label} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Sora'", fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</span>
-            <span style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase" }}>{s.label}</span>
+          <div key={s.label} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "12px 18px", display: "flex", alignItems: "center", gap: mob ? 6 : 10, flexShrink: 0 }}>
+            <span style={{ fontFamily: "'Sora'", fontSize: mob ? 16 : 20, fontWeight: 700, color: s.color }}>{s.val}</span>
+            <span style={{ fontSize: mob ? 9 : 11, color: "#9ca3af", textTransform: "uppercase", whiteSpace: "nowrap" }}>{s.label}</span>
           </div>
         ))}
-        {/* Per-page budget breakdown */}
         {PAGES.filter(p => !p.noAds).map(pg => {
           const pageBudget = data.adRequests.filter(a => a.pages?.includes(pg.id)).reduce((s,a) => s + (parseFloat(a.budget) || 0) / (a.pages?.length || 1), 0);
           return pageBudget > 0 ? (
-            <div key={pg.id} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={pg.id} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "6px 10px" : "8px 14px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: pg.color }} />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>{pg.name}</span>
+              <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{pg.name}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: pg.color }}>₹{Math.round(pageBudget).toLocaleString("en-IN")}</span>
             </div>
           ) : null;
@@ -67,10 +77,10 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
 
       {/* NEW REQUEST FORM */}
       {showForm && (
-        <div style={{ background: "#f8f8f6", border: "1px solid #e5e5e0", borderRadius: 14, padding: 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
+        <div style={{ background: "#f8f8f6", border: "1px solid #e5e5e0", borderRadius: 14, padding: mob ? 16 : 24, marginBottom: 20, animation: "fadeSlide 0.2s ease" }}>
           <style>{`@keyframes fadeSlide { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }`}</style>
           <div style={{ fontSize: 16, fontFamily: "'Sora'", fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>New Ad Request</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
             <InputField label="Budget (₹)" value={form.budget} onChange={v => setForm(f => ({...f, budget: v}))} placeholder="e.g. 25000" type="number" />
             <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({...f, startDate: v}))} type="date" />
@@ -96,17 +106,20 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
               width: "100%", minHeight: 80, background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 8, padding: 12, color: "#1a1a1a", fontSize: 13, resize: "vertical",
             }} />
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Submit Request</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Submit Request</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* Status Filter */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-        <Chip active={statusFilter === "All"} onClick={() => setStatusFilter("All")}>All</Chip>
-        {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <Chip key={k} active={statusFilter === k} onClick={() => setStatusFilter(k)}>{v.label}</Chip>)}
+      <div className="ad-filter-row" style={{
+        display: "flex", gap: 6, marginBottom: 16,
+        ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+      }}>
+        <Chip active={statusFilter === "All"} onClick={() => setStatusFilter("All")} style={{ flexShrink: 0 }}>All</Chip>
+        {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <Chip key={k} active={statusFilter === k} onClick={() => setStatusFilter(k)} style={{ flexShrink: 0 }}>{v.label}</Chip>)}
       </div>
 
       {/* Requests List */}
@@ -116,26 +129,26 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
         return (
           <div key={req.id} style={{
             background: "#ffffff", border: "1px solid #eeeee9",
-            borderRadius: 12, padding: "16px 20px", marginBottom: 8,
+            borderRadius: 12, padding: mob ? "12px 14px" : "16px 20px", marginBottom: 8,
             borderLeft: `3px solid ${stInfo.color}`,
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Sora'", fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
                   <select
                     value={req.status}
                     onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
-                    style={{ fontSize: 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontWeight: 700 }}
+                    style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", cursor: "pointer", fontWeight: 700, minHeight: mob ? 36 : "auto" }}
                   >
                     {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: mob ? 6 : 12, flexWrap: "wrap", fontSize: mob ? 11 : 12, color: "#6b7280", marginBottom: 8 }}>
                   <span>💰 <strong style={{ color: "#FFB300" }}>₹{parseFloat(req.budget).toLocaleString("en-IN")}</strong></span>
                   {req.startDate && <span>📅 {formatDate(req.startDate)} → {req.endDate ? formatDate(req.endDate) : "TBD"}</span>}
                   {req.requestedBy && <span>👤 {req.requestedBy}</span>}
-                  <span style={{ color: "#d1d5db" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>
+                  {!mob && <span style={{ color: "#d1d5db" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>}
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: req.brief ? 8 : 0 }}>
                   {(req.pages || []).map(pid => {
@@ -145,7 +158,7 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
                 </div>
                 {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
               </div>
-              <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer" }}>✕</button>
+              <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>✕</button>
             </div>
           </div>
         );

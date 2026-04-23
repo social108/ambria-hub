@@ -5,11 +5,13 @@ import useEvents from "../hooks/useEvents.js";
 import useWorkflow from "../hooks/useWorkflow.js";
 import useAdRequests from "../hooks/useAdRequests.js";
 import useRealtimeSync from "../hooks/useRealtimeSync.js";
+import useIsMobile from "../hooks/useIsMobile.js";
 import RemindersView from "../components/RemindersView.jsx";
 import CalendarView from "../components/CalendarView.jsx";
 import WorkflowView from "../components/WorkflowView.jsx";
 import AdRequestsView from "../components/AdRequestsView.jsx";
 import PagesView from "../components/PagesView.jsx";
+import TeamView from "../components/TeamView.jsx";
 import logo from "../assets/logo.png";
 
 const roleBadgeColors = {
@@ -25,6 +27,7 @@ export default function Dashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [syncError, setSyncError] = useState(null);
+  const mob = useIsMobile();
 
   // Offline detection
   useEffect(() => {
@@ -81,6 +84,10 @@ export default function Dashboard() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F3", minHeight: "100vh", color: "#1a1a1a" }}>
+      <style>{`
+        .dash-nav-tabs::-webkit-scrollbar { display: none; }
+      `}</style>
+
       {/* Offline banner */}
       {offline && (
         <div style={{
@@ -105,63 +112,72 @@ export default function Dashboard() {
 
       {/* NAV */}
       <nav style={{
-        display: "flex", alignItems: "center", gap: 8, padding: "14px 24px",
+        display: "flex", alignItems: "center", gap: mob ? 6 : 8, padding: mob ? "10px 12px" : "14px 24px",
         background: "#ffffff", borderBottom: "1px solid #eeeee9",
         position: "sticky", top: 0, zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 20 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: mob ? 6 : 10, marginRight: mob ? 8 : 20, flexShrink: 0 }}>
+          <div style={{ width: mob ? 26 : 32, height: mob ? 26 : 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
             <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
-          <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+          {!mob && <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>}
         </div>
-        {[
-          { id: "reminders", label: "🔔 Reminders" },
-          { id: "calendar", label: "◎ Calendar" },
-          { id: "workflow", label: "✦ Workflow Board" },
-          { id: "ads", label: "▲ Ad Requests" },
-          { id: "pages", label: "◆ Pages" },
-        ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
-            color: tab === t.id ? "#1a1a1a" : "#9ca3af",
-            transition: "all 0.2s", position: "relative",
-          }}>
-            {t.label}
-            {t.id === "reminders" && (() => {
-              const urgentCount = allEvents.filter(e => {
-                const d = daysUntil(e.date);
-                if (d < 0) return false;
-                const hasAd = (e.actions || []).includes("ad");
-                const adLead = e.adLeadDays || 15;
-                const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
-                const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
-                const storyDays = daysUntil(getStoryReminder(e.date));
-                return (d >= 0 && d <= 7) || (hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5) || (hasAd && adStartDays >= -2 && adStartDays <= 3) || (storyDays >= -1 && storyDays <= 3);
-              }).length;
-              return urgentCount > 0 ? (
-                <span style={{ position: "absolute", top: -2, right: -4, background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
-              ) : null;
-            })()}
-          </button>
-        ))}
+        <div className="dash-nav-tabs" style={{
+          display: "flex", gap: mob ? 4 : 8, flex: 1, minWidth: 0,
+          overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+        }}>
+          {[
+            { id: "reminders", label: mob ? "🔔" : "🔔 Reminders" },
+            { id: "calendar", label: mob ? "◎" : "◎ Calendar" },
+            { id: "workflow", label: mob ? "✦" : "✦ Workflow Board" },
+            { id: "ads", label: mob ? "▲" : "▲ Ad Requests" },
+            { id: "pages", label: mob ? "◆" : "◆ Pages" },
+            ...(role === "admin" ? [{ id: "team", label: mob ? "👥" : "👥 Team" }] : []),
+          ].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              padding: mob ? "6px 10px" : "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+              fontSize: mob ? 11 : 13, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
+              background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
+              color: tab === t.id ? "#1a1a1a" : "#9ca3af",
+              transition: "all 0.2s", position: "relative",
+            }}>
+              {t.label}
+              {t.id === "reminders" && (() => {
+                const urgentCount = allEvents.filter(e => {
+                  const d = daysUntil(e.date);
+                  if (d < 0) return false;
+                  const hasAd = (e.actions || []).includes("ad");
+                  const adLead = e.adLeadDays || 15;
+                  const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
+                  const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
+                  const storyDays = daysUntil(getStoryReminder(e.date));
+                  return (d >= 0 && d <= 7) || (hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5) || (hasAd && adStartDays >= -2 && adStartDays <= 3) || (storyDays >= -1 && storyDays <= 3);
+                }).length;
+                return urgentCount > 0 ? (
+                  <span style={{ position: "absolute", top: -2, right: -4, background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
+                ) : null;
+              })()}
+            </button>
+          ))}
+        </div>
 
         {/* Right side: user info + logout */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{displayName}</span>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            padding: "3px 8px",
-            borderRadius: 6,
-            background: badge.bg,
-            color: badge.color,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-          }}>
-            {(role || "viewer").replace("_", " ")}
-          </span>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: mob ? 6 : 10, flexShrink: 0 }}>
+          {!mob && <span style={{ fontSize: 12, color: "#6b7280" }}>{displayName}</span>}
+          {!mob && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "3px 8px",
+              borderRadius: 6,
+              background: badge.bg,
+              color: badge.color,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}>
+              {(role || "viewer").replace("_", " ")}
+            </span>
+          )}
           <button
             onClick={handleLogout}
             disabled={loggingOut}
@@ -183,12 +199,13 @@ export default function Dashboard() {
       </nav>
 
       {/* CONTENT */}
-      <div style={{ padding: "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ padding: mob ? "12px 10px" : "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
         {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} />}
         {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} />}
         {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} allEvents={allEvents} />}
         {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} />}
         {tab === "pages" && <PagesView allEvents={allEvents} />}
+        {tab === "team" && role === "admin" && <TeamView />}
       </div>
     </div>
   );

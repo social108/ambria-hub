@@ -58,6 +58,13 @@ export const REMINDER_TYPES = {
 
 export const CAT_OPTIONS = ["Hindu Festival","Muslim Festival","Sikh Festival","Christian","National","International","Seasonal","Business","Food & Lifestyle","Custom"];
 
+export const TEAM_ROLES = {
+  admin: { label: "Admin", color: "#92750a", bg: "rgba(201,168,76,0.15)", desc: "Full access — manage team, events, ads, workflow" },
+  creative: { label: "Creative Team", color: "#1976D2", bg: "rgba(66,165,245,0.12)", desc: "Create & edit content, manage workflow" },
+  venue_manager: { label: "Venue Manager", color: "#2E7D32", bg: "rgba(102,187,106,0.12)", desc: "Manage venue events & coordination" },
+  viewer: { label: "Viewer", color: "#6b7280", bg: "#f3f2ef", desc: "View-only access to all pages" },
+};
+
 export const EMPTY_FORM = { name: "", date: "", cat: "Seasonal", actions: [], pages: [], priority: 2, adLeadDays: 15, note: "" };
 
 export const STORAGE_KEYS = {

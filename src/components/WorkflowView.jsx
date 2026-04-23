@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { PAGES, ACTION_TYPES, KANBAN_COLUMNS } from "../lib/constants.js";
 import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
+import useIsMobile from "../hooks/useIsMobile.js";
 
 export default function WorkflowView({ data, updateWorkflow, allEvents }) {
   const [filter, setFilter] = useState("upcoming");
@@ -9,8 +10,8 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
   const [dragItem, setDragItem] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const mob = useIsMobile();
 
-  // Build flat task list: each task = one event × one page
   const tasks = useMemo(() => {
     const list = [];
     allEvents.forEach(e => {
@@ -38,7 +39,6 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
     return list;
   }, [data.workflow, filter, pageFilter, allEvents]);
 
-  // Group tasks by status for kanban columns
   const columns = useMemo(() => {
     const cols = {};
     KANBAN_COLUMNS.forEach(c => { cols[c.id] = []; });
@@ -46,7 +46,6 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
       if (cols[t.status]) cols[t.status].push(t);
       else cols.pending.push(t);
     });
-    // Sort each column: closest events first
     Object.values(cols).forEach(arr => arr.sort((a, b) => a.days - b.days));
     return cols;
   }, [tasks]);
@@ -70,24 +69,28 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
   return (
     <div>
       <style>{`
-        .kanban-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 16px; min-height: 500px; }
+        .kanban-scroll {
+          display: flex; gap: 12px; overflow-x: auto; padding-bottom: 16px; min-height: ${mob ? "400px" : "500px"};
+          -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        }
+        .kanban-scroll::-webkit-scrollbar { display: none; }
         .kanban-col {
-          min-width: 220px; max-width: 260px; flex: 1 0 220px;
+          min-width: ${mob ? "260px" : "220px"}; max-width: ${mob ? "280px" : "260px"}; flex: 1 0 ${mob ? "260px" : "220px"};
           background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
           display: flex; flex-direction: column; overflow: hidden;
         }
         .kanban-col.drag-over { border-color: rgba(26,26,26,0.3); background: rgba(26,26,26,0.02); }
         .kanban-col-header {
-          padding: 14px 14px 10px; display: flex; align-items: center; justify-content: space-between;
+          padding: ${mob ? "10px 10px 8px" : "14px 14px 10px"}; display: flex; align-items: center; justify-content: space-between;
           border-bottom: 1px solid #eeeee9; position: sticky; top: 0; z-index: 2;
           background: #ffffff;
         }
-        .kanban-col-body { padding: 8px; flex: 1; overflow-y: auto; max-height: 65vh; }
+        .kanban-col-body { padding: ${mob ? "6px" : "8px"}; flex: 1; overflow-y: auto; max-height: 65vh; }
         .kanban-card {
           background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-          padding: 10px 12px; margin-bottom: 6px;
+          padding: ${mob ? "8px 10px" : "10px 12px"}; margin-bottom: 6px;
           cursor: grab; transition: all 0.2s; position: relative;
         }
         .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
@@ -115,35 +118,41 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
           font-size: 11px; color: #6b7280; line-height: 1.5;
           animation: kFadeIn 0.15s ease;
         }
-        .card-move-btns { display: flex; gap: 4px; margin-top: 8px; animation: kFadeIn 0.15s ease; }
+        .card-move-btns { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; animation: kFadeIn 0.15s ease; }
         .card-move-btn {
-          flex: 1; padding: 5px 4px; border-radius: 6px; border: 1px solid #e5e5e0;
+          flex: ${mob ? "1 0 calc(50% - 4px)" : "1"}; padding: 5px 4px; border-radius: 6px; border: 1px solid #e5e5e0;
           background: #ffffff; color: #6b7280; font-size: 9.5px;
           font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s;
         }
         .card-move-btn:hover { background: #f3f2ef; color: #1a1a1a; }
         @keyframes kFadeIn { from { opacity:0; transform:translateY(-4px) } to { opacity:1; transform:translateY(0) } }
-        .kanban-stats-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .kanban-stats-bar {
+          display: flex; gap: 8px; margin-bottom: 12px;
+          ${mob ? "overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap;" : "flex-wrap: wrap;"}
+        }
+        .kanban-stats-bar::-webkit-scrollbar { display: none; }
         .kanban-stat {
           display: flex; align-items: center; gap: 8px;
           background: #ffffff; border: 1px solid #eeeee9;
-          border-radius: 10px; padding: 8px 14px;
+          border-radius: 10px; padding: ${mob ? "6px 10px" : "8px 14px"};
+          flex-shrink: 0;
         }
-        .kanban-stat .ks-num { font-family: 'Sora'; font-size: 20px; font-weight: 700; }
-        .kanban-stat .ks-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kanban-stat .ks-num { font-family: 'Sora'; font-size: ${mob ? "16px" : "20px"}; font-weight: 700; }
+        .kanban-stat .ks-label { font-size: ${mob ? "9px" : "10px"}; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
         .kanban-progress-bar {
           height: 4px; border-radius: 2px; background: #eeeee9;
           overflow: hidden; margin-bottom: 16px;
         }
         .kanban-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+        .wf-filter-row::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontFamily: "'Sora'", fontSize: 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Workflow Board
         </h1>
-        <p style={{ fontSize: 13, color: "#9ca3af" }}>Drag cards between columns or click to move · Each card = 1 event × 1 page</p>
+        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>{mob ? "Tap cards to move · Swipe columns" : "Drag cards between columns or click to move · Each card = 1 event × 1 page"}</p>
       </div>
 
       {/* Stats */}
@@ -174,18 +183,24 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Show</span>
+      <div className="wf-filter-row" style={{
+        display: "flex", gap: 6, marginBottom: 8,
+        ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px", flexShrink: 0 }}>Show</span>
         {[
           { v: "thisweek", l: "This Week" }, { v: "upcoming", l: "Next 45 Days" },
           { v: "overdue", l: "⚠ Overdue" }, { v: "all", l: "All Year" },
-        ].map(f => <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)}>{f.l}</Chip>)}
+        ].map(f => <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)} style={{ flexShrink: 0 }}>{f.l}</Chip>)}
       </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px" }}>Page</span>
-        <Chip active={pageFilter === "All"} onClick={() => setPageFilter("All")}>All Pages</Chip>
+      <div className="wf-filter-row" style={{
+        display: "flex", gap: 6, marginBottom: 16,
+        ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#d1d5db", letterSpacing: 1, textTransform: "uppercase", padding: "5px 2px", flexShrink: 0 }}>Page</span>
+        <Chip active={pageFilter === "All"} onClick={() => setPageFilter("All")} style={{ flexShrink: 0 }}>All Pages</Chip>
         {PAGES.map(p => (
-          <Chip key={p.id} active={pageFilter === p.id} onClick={() => setPageFilter(p.id)}>
+          <Chip key={p.id} active={pageFilter === p.id} onClick={() => setPageFilter(p.id)} style={{ flexShrink: 0 }}>
             <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: p.color, marginRight: 4, verticalAlign: "middle" }} />
             {p.name.replace("Ambria ", "").replace("Ambria.in","Ambria.in")}
           </Chip>
@@ -226,9 +241,7 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                   const isExpanded = expandedCard === cardKey;
                   const isDragging = dragItem && dragItem.eventKey === task.eventKey && dragItem.pageId === task.pageId;
                   const urgencyColor = task.days < 0 ? "#EF5350" : task.days <= 3 ? "#FF7043" : task.days <= 7 ? "#FFB300" : "transparent";
-                  const priorityColors = ["transparent","rgba(255,179,0,0.3)","rgba(244,81,30,0.35)","rgba(213,0,0,0.4)"];
 
-                  // Determine which columns this card can move to (adjacent + skip)
                   const colIndex = KANBAN_COLUMNS.findIndex(c => c.id === col.id);
                   const moveTargets = KANBAN_COLUMNS.filter((c, i) => i !== colIndex);
 
@@ -236,24 +249,17 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                     <div
                       key={cardKey}
                       className={`kanban-card ${isDragging ? "dragging" : ""}`}
-                      draggable
+                      draggable={!mob}
                       onDragStart={() => handleDragStart(task)}
                       onDragEnd={() => { setDragItem(null); setDragOverCol(null); }}
                       onClick={() => setExpandedCard(isExpanded ? null : cardKey)}
                     >
-                      {/* Urgency stripe */}
                       <div className="card-urgency" style={{ background: urgencyColor }} />
-
-                      {/* Page badge */}
                       <div className="card-page" style={{ background: `${task.page.color}18`, color: task.page.color }}>
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: task.page.color, display: "inline-block" }} />
                         {task.page.name.replace("Ambria ", "")}
                       </div>
-
-                      {/* Event name */}
                       <div className="card-event">{task.event.name}</div>
-
-                      {/* Date + countdown */}
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span className="card-date">{formatDate(task.event.date)}</span>
                         {task.days >= 0 ? (
@@ -270,18 +276,14 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                           </span>
                         )}
                       </div>
-
-                      {/* Action tags */}
                       <div className="card-actions">
                         {task.event.actions.map(a => {
                           const at = ACTION_TYPES[a];
                           return <span key={a} style={{ background: at.bg, color: at.color }}>{at.icon} {at.label}</span>;
                         })}
                       </div>
-
-                      {/* Ad timeline if applicable */}
                       {task.event.actions.includes("ad") && task.event.adLeadDays && (
-                        <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
+                        <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 9, color: "#d1d5db", background: "#f5f4f1", padding: "2px 6px", borderRadius: 4 }}>
                             ✎ Creative by {formatDate(getCreativeDeadline(task.event.date, task.event.adLeadDays))}
                           </span>
@@ -290,8 +292,6 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                           </span>
                         </div>
                       )}
-
-                      {/* Expanded: note + move buttons */}
                       {isExpanded && (
                         <>
                           <div className="card-expanded-note">

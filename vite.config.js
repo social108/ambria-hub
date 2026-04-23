@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.png'],
       manifest: {
         name: 'SMO Calendar',
-        short_name: 'SMO Cal',
+        short_name: 'SMO Calendar',
         theme_color: '#F7F6F3',
         background_color: '#F7F6F3',
         display: 'standalone',

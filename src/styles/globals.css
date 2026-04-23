@@ -7,3 +7,62 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
 input, select, textarea { font-family: 'DM Sans', sans-serif; }
+
+/* ═══ MOBILE OVERRIDES (≤768px) ═══ */
+@media (max-width: 768px) {
+
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+
+  /* Touch-friendly buttons */
+  button {
+    min-height: 36px;
+  }
+
+  /* Touch-friendly selects */
+  select {
+    min-height: 44px;
+    font-size: 14px !important;
+  }
+
+  /* Modal overrides — catch all fixed overlays */
+  .rem-modal, .cal-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 88vh !important;
+    padding: 16px !important;
+  }
+
+  /* Modal close buttons — bigger tap target */
+  .rem-modal button[style*="fontSize: 22"],
+  .rem-modal button[style*="fontSize: 20"],
+  .cal-modal button[style*="fontSize: 20"] {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /* Kanban card move buttons — bigger tap targets */
+  .card-move-btn {
+    min-height: 40px !important;
+    padding: 8px 6px !important;
+    font-size: 10px !important;
+  }
+
+  /* Kanban cards — no grab cursor on mobile */
+  .kanban-card {
+    cursor: pointer !important;
+  }
+
+  /* Filter/chip scrollable rows */
+  .rem-filter-row,
+  .cal-filter-row,
+  .wf-filter-row,
+  .ad-filter-row,
+  .ad-budget-row {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+}

@@ -13,7 +13,6 @@ export default function useTeam() {
       const { data, error: err } = await supabase
         .from("profiles")
         .select("id, role, full_name, email, status, last_sign_in, created_at")
-        .neq("role", "disabled")
         .order("created_at", { ascending: true });
       if (err) throw err;
       setMembers(data || []);
@@ -36,10 +35,9 @@ export default function useTeam() {
   }, [fetchMembers]);
 
   const deleteMember = useCallback(async (userId) => {
-    // Set role to "disabled" so they're filtered out
     const { error: err } = await supabase
       .from("profiles")
-      .update({ role: "disabled" })
+      .delete()
       .eq("id", userId);
     if (err) throw err;
     await fetchMembers();

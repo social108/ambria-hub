@@ -1,65 +1,52 @@
 import { useState } from "react";
-import { TEAM_ROLES } from "../lib/constants.js";
 import useTeam from "../hooks/useTeam.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
-import InputField from "./shared/InputField.jsx";
-import FieldLabel from "./shared/FieldLabel.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 
-const ROLE_OPTIONS = Object.entries(TEAM_ROLES).map(([id, r]) => ({ id, label: r.label }));
+const ROLE_BADGES = {
+  admin: { label: "Admin", bg: "#1a1a1a", color: "#fff" },
+  creative: { label: "Creative", bg: "#3b82f6", color: "#fff" },
+  venue_manager: { label: "Venue Manager", bg: "#22c55e", color: "#fff" },
+  viewer: { label: "Viewer", bg: "#9ca3af", color: "#fff" },
+};
 
-const EMPTY_INVITE = { fullName: "", email: "", password: "", role: "creative" };
+const ROLE_OPTIONS = [
+  { id: "admin", label: "Admin" },
+  { id: "creative", label: "Creative Team" },
+  { id: "venue_manager", label: "Venue Manager" },
+  { id: "viewer", label: "Viewer" },
+];
 
 export default function TeamView() {
   const { user } = useAuth();
-  const { members, loading, error, inviteMember, updateMemberRole } = useTeam();
+  const { members, loading, error, updateMemberRole, deleteMember } = useTeam();
   const mob = useIsMobile();
+  const [updatingId, setUpdatingId] = useState(null);
 
-  const [showInvite, setShowInvite] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_INVITE });
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(null);
-  const [editingRole, setEditingRole] = useState(null); // member id being edited
-
-  const handleSubmit = async () => {
-    setFormError(null);
-    setFormSuccess(null);
-    if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
-      setFormError("All fields are required");
-      return;
-    }
-    if (form.password.length < 6) {
-      setFormError("Password must be at least 6 characters");
-      return;
-    }
-    setSubmitting(true);
+  const handleRoleChange = async (memberId, newRole) => {
+    setUpdatingId(memberId);
     try {
-      await inviteMember(form);
-      setFormSuccess(`${form.fullName} has been invited!`);
-      setForm({ ...EMPTY_INVITE });
-      setTimeout(() => { setShowInvite(false); setFormSuccess(null); }, 1500);
+      await updateMemberRole(memberId, newRole);
     } catch (e) {
-      setFormError(e.message);
+      alert("Failed to update role: " + e.message);
     } finally {
-      setSubmitting(false);
+      setUpdatingId(null);
     }
   };
 
-  const handleRoleChange = async (memberId, newRole) => {
+  const handleDelete = async (member) => {
+    if (!confirm(`Remove ${member.full_name || member.email} from the team? They won't be able to access anything.`)) return;
     try {
-      await updateMemberRole(memberId, newRole);
-      setEditingRole(null);
+      await deleteMember(member.id);
     } catch (e) {
-      alert("Failed to update role: " + e.message);
+      alert("Failed to remove user: " + e.message);
     }
   };
 
   const formatDate = (d) => {
     if (!d) return "—";
-    const dt = new Date(d);
-    return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   };
 
   if (loading) return (
@@ -68,32 +55,13 @@ export default function TeamView() {
 
   return (
     <div>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 20, flexWrap: "wrap", gap: 10,
-      }}>
-        <div>
-          <h2 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: mob ? 18 : 22, margin: 0 }}>
-            Team Members
-          </h2>
-          <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9ca3af" }}>
-            {members.length} member{members.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowInvite(true); setFormError(null); setFormSuccess(null); }}
-          style={{
-            background: "#C9A84C", color: "#fff", border: "none", borderRadius: 10,
-            padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-            fontFamily: "'DM Sans'", letterSpacing: 0.3,
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={e => { e.target.style.background = "#b8963e"; }}
-          onMouseLeave={e => { e.target.style.background = "#C9A84C"; }}
-        >
-          + Invite Team Member
-        </button>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: mob ? 18 : 22, margin: 0 }}>
+          Team Members
+        </h2>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9ca3af" }}>
+          {members.length} member{members.length !== 1 ? "s" : ""} — new signups get "Viewer" role until you change it
+        </p>
       </div>
 
       {error && (
@@ -105,26 +73,28 @@ export default function TeamView() {
         </div>
       )}
 
-      {/* Member list */}
       {members.length === 0 ? (
-        <EmptyState msg="No team members yet. Invite someone to get started!" />
+        <EmptyState msg="No team members yet. Share the sign-up link with your team!" />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {members.map(m => {
-            const r = TEAM_ROLES[m.role] || TEAM_ROLES.viewer;
+            const badge = ROLE_BADGES[m.role] || ROLE_BADGES.viewer;
             const isCurrentUser = m.id === user?.id;
+            const isUpdating = updatingId === m.id;
+
             return (
               <div key={m.id} style={{
                 background: "#fff", border: "1px solid #eeeee9", borderRadius: 12,
                 padding: mob ? "14px 14px" : "16px 22px",
                 display: "flex", alignItems: mob ? "flex-start" : "center",
                 flexDirection: mob ? "column" : "row", gap: mob ? 10 : 16,
+                opacity: isUpdating ? 0.6 : 1, transition: "opacity 0.2s",
               }}>
                 {/* Avatar + Name */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                   <div style={{
                     width: 38, height: 38, borderRadius: "50%",
-                    background: r.bg, color: r.color,
+                    background: badge.bg, color: badge.color,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontWeight: 700, fontSize: 15, flexShrink: 0,
                     fontFamily: "'Sora'",
@@ -142,185 +112,58 @@ export default function TeamView() {
                   </div>
                 </div>
 
-                {/* Role badge / editor */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  {editingRole === m.id ? (
+                {/* Joined date */}
+                <div style={{ flexShrink: 0, minWidth: mob ? undefined : 110 }}>
+                  <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Joined</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{formatDate(m.created_at)}</div>
+                </div>
+
+                {/* Role dropdown */}
+                <div style={{ flexShrink: 0 }}>
+                  {isCurrentUser ? (
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 6,
+                      background: badge.bg, color: badge.color,
+                      textTransform: "uppercase", letterSpacing: 0.5,
+                    }}>
+                      {badge.label}
+                    </span>
+                  ) : (
                     <select
                       value={m.role}
                       onChange={e => handleRoleChange(m.id, e.target.value)}
-                      onBlur={() => setEditingRole(null)}
-                      autoFocus
+                      disabled={isUpdating}
                       style={{
-                        padding: "4px 8px", borderRadius: 6, border: "1px solid #d1d5db",
-                        fontSize: 12, background: "#f5f4f1", color: "#1a1a1a", cursor: "pointer",
+                        padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: "1px solid #e5e5e0", background: badge.bg, color: badge.color,
+                        cursor: "pointer", appearance: "auto",
                       }}
                     >
                       {ROLE_OPTIONS.map(o => (
                         <option key={o.id} value={o.id}>{o.label}</option>
                       ))}
                     </select>
-                  ) : (
-                    <span
-                      onClick={() => !isCurrentUser && setEditingRole(m.id)}
-                      title={isCurrentUser ? "Can't change your own role" : "Click to change role"}
-                      style={{
-                        fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6,
-                        background: r.bg, color: r.color,
-                        textTransform: "uppercase", letterSpacing: 0.5,
-                        cursor: isCurrentUser ? "default" : "pointer",
-                        transition: "opacity 0.2s",
-                      }}
-                    >
-                      {r.label}
-                    </span>
                   )}
                 </div>
 
-                {/* Status */}
-                <div style={{ flexShrink: 0, minWidth: 70 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6,
-                    background: m.status === "active" ? "rgba(102,187,106,0.12)" : "rgba(255,179,0,0.12)",
-                    color: m.status === "active" ? "#2E7D32" : "#92750a",
-                    textTransform: "uppercase", letterSpacing: 0.5,
-                  }}>
-                    {m.status || "active"}
-                  </span>
-                </div>
-
-                {/* Last login */}
-                <div style={{ flexShrink: 0, minWidth: mob ? undefined : 120, textAlign: mob ? "left" : "right" }}>
-                  <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Last login</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>
-                    {formatDate(m.last_sign_in)}
-                  </div>
-                </div>
+                {/* Delete button */}
+                {!isCurrentUser && (
+                  <button
+                    onClick={() => handleDelete(m)}
+                    style={{
+                      background: "none", border: "none", color: "#9ca3af",
+                      fontSize: 12, cursor: "pointer", padding: "4px 8px",
+                      transition: "color 0.2s", flexShrink: 0,
+                    }}
+                    onMouseEnter={e => { e.target.style.color = "#dc2626"; }}
+                    onMouseLeave={e => { e.target.style.color = "#9ca3af"; }}
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Invite Modal */}
-      {showInvite && (
-        <div
-          onClick={() => setShowInvite(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 200,
-            background: "rgba(0,0,0,0.25)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: "#fff", borderRadius: 16,
-              width: "100%", maxWidth: 440, padding: mob ? 20 : 28,
-              boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
-              animation: "fadeInUp 0.2s ease-out",
-            }}
-          >
-            <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
-
-            <h3 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 18, margin: "0 0 20px" }}>
-              Invite Team Member
-            </h3>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <InputField
-                label="Full Name"
-                value={form.fullName}
-                onChange={v => setForm(f => ({ ...f, fullName: v }))}
-                placeholder="e.g. Priya Sharma"
-              />
-              <InputField
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={v => setForm(f => ({ ...f, email: v }))}
-                placeholder="priya@ambria.in"
-              />
-              <InputField
-                label="Initial Password"
-                type="password"
-                value={form.password}
-                onChange={v => setForm(f => ({ ...f, password: v }))}
-                placeholder="Min 6 characters"
-              />
-
-              <div>
-                <FieldLabel>Role</FieldLabel>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {ROLE_OPTIONS.map(o => {
-                    const rc = TEAM_ROLES[o.id];
-                    const sel = form.role === o.id;
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, role: o.id }))}
-                        style={{
-                          padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                          border: sel ? `2px solid ${rc.color}` : "1px solid #e5e5e0",
-                          background: sel ? rc.bg : "#f5f4f1",
-                          color: sel ? rc.color : "#9ca3af",
-                          cursor: "pointer", transition: "all 0.15s",
-                        }}
-                      >
-                        {o.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
-                  {TEAM_ROLES[form.role]?.desc}
-                </div>
-              </div>
-            </div>
-
-            {formError && (
-              <div style={{
-                background: "rgba(239,83,80,0.08)", color: "#dc2626",
-                padding: "8px 12px", borderRadius: 8, fontSize: 12, marginTop: 14,
-              }}>
-                {formError}
-              </div>
-            )}
-            {formSuccess && (
-              <div style={{
-                background: "rgba(102,187,106,0.12)", color: "#2E7D32",
-                padding: "8px 12px", borderRadius: 8, fontSize: 12, marginTop: 14,
-              }}>
-                {formSuccess}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-              <button
-                onClick={() => { setShowInvite(false); setForm({ ...EMPTY_INVITE }); }}
-                style={{
-                  padding: "9px 18px", borderRadius: 8, border: "1px solid #e5e5e0",
-                  background: "#f5f4f1", color: "#6b7280", fontSize: 13,
-                  fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                style={{
-                  padding: "9px 22px", borderRadius: 8, border: "none",
-                  background: submitting ? "#d1d5db" : "#C9A84C",
-                  color: "#fff", fontSize: 13, fontWeight: 700, cursor: submitting ? "default" : "pointer",
-                  transition: "background 0.2s",
-                }}
-              >
-                {submitting ? "Creating..." : "Create Account"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

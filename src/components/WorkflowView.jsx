@@ -4,7 +4,8 @@ import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../l
 import Chip from "./shared/Chip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-export default function WorkflowView({ data, updateWorkflow, allEvents }) {
+export default function WorkflowView({ data, updateWorkflow, allEvents, role }) {
+  const canMove = role === "admin" || role === "creative";
   const [filter, setFilter] = useState("upcoming");
   const [pageFilter, setPageFilter] = useState("All");
   const [dragItem, setDragItem] = useState(null);
@@ -249,8 +250,8 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                     <div
                       key={cardKey}
                       className={`kanban-card ${isDragging ? "dragging" : ""}`}
-                      draggable={!mob}
-                      onDragStart={() => handleDragStart(task)}
+                      draggable={!mob && canMove}
+                      onDragStart={() => canMove && handleDragStart(task)}
                       onDragEnd={() => { setDragItem(null); setDragOverCol(null); }}
                       onClick={() => setExpandedCard(isExpanded ? null : cardKey)}
                     >
@@ -294,10 +295,10 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                       )}
                       {isExpanded && (
                         <>
-                          <div className="card-expanded-note">
+                          {task.event.note && <div className="card-expanded-note">
                             💡 {task.event.note}
-                          </div>
-                          <div className="card-move-btns">
+                          </div>}
+                          {canMove && <div className="card-move-btns">
                             {moveTargets.map(target => (
                               <button
                                 key={target.id}
@@ -312,7 +313,7 @@ export default function WorkflowView({ data, updateWorkflow, allEvents }) {
                                 {target.icon} {target.label}
                               </button>
                             ))}
-                          </div>
+                          </div>}
                         </>
                       )}
                     </div>

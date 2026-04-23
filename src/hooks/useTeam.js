@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase, supabaseUserCreation } from "../supabaseClient.js";
+import { supabase } from "../supabaseClient.js";
 
 export default function useTeam() {
   const [members, setMembers] = useState([]);
@@ -13,6 +13,7 @@ export default function useTeam() {
       const { data, error: err } = await supabase
         .from("profiles")
         .select("id, role, full_name, email, status, last_sign_in, created_at")
+        .neq("role", "disabled")
         .order("created_at", { ascending: true });
       if (err) throw err;
       setMembers(data || []);
@@ -25,38 +26,6 @@ export default function useTeam() {
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
-  const inviteMember = useCallback(async ({ fullName, email, password, role }) => {
-    // Sign up using the separate client so admin's session is untouched
-    const { data: signUpData, error: signUpErr } = await supabaseUserCreation.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-    if (signUpErr) throw signUpErr;
-
-    const newUserId = signUpData.user?.id;
-    if (!newUserId) throw new Error("User creation failed — no user ID returned");
-
-    // Upsert the profile with role and metadata
-    const { error: profileErr } = await supabase
-      .from("profiles")
-      .upsert({
-        id: newUserId,
-        full_name: fullName,
-        email,
-        role,
-        status: "invited",
-      }, { onConflict: "id" });
-    if (profileErr) throw profileErr;
-
-    // Sign out the new user from the creation client (cleanup)
-    await supabaseUserCreation.auth.signOut();
-
-    // Refresh the member list
-    await fetchMembers();
-    return signUpData.user;
-  }, [fetchMembers]);
-
   const updateMemberRole = useCallback(async (userId, newRole) => {
     const { error: err } = await supabase
       .from("profiles")
@@ -66,5 +35,15 @@ export default function useTeam() {
     await fetchMembers();
   }, [fetchMembers]);
 
-  return { members, loading, error, fetchMembers, inviteMember, updateMemberRole };
+  const deleteMember = useCallback(async (userId) => {
+    // Set role to "disabled" so they're filtered out
+    const { error: err } = await supabase
+      .from("profiles")
+      .update({ role: "disabled" })
+      .eq("id", userId);
+    if (err) throw err;
+    await fetchMembers();
+  }, [fetchMembers]);
+
+  return { members, loading, error, fetchMembers, updateMemberRole, deleteMember };
 }

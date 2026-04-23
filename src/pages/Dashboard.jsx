@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { supabase } from "../supabaseClient.js";
 import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder } from "../lib/helpers.js";
 import useEvents from "../hooks/useEvents.js";
 import useWorkflow from "../hooks/useWorkflow.js";
@@ -27,7 +28,30 @@ export default function Dashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [syncError, setSyncError] = useState(null);
+  const [showPwModal, setShowPwModal] = useState(false);
+  const [pwForm, setPwForm] = useState({ newPw: "", confirmPw: "" });
+  const [pwStatus, setPwStatus] = useState(null); // { type: "error"|"success", msg }
+  const [pwSaving, setPwSaving] = useState(false);
   const mob = useIsMobile();
+
+  const handleChangePassword = async () => {
+    setPwStatus(null);
+    if (!pwForm.newPw || !pwForm.confirmPw) { setPwStatus({ type: "error", msg: "Both fields are required" }); return; }
+    if (pwForm.newPw.length < 6) { setPwStatus({ type: "error", msg: "Password must be at least 6 characters" }); return; }
+    if (pwForm.newPw !== pwForm.confirmPw) { setPwStatus({ type: "error", msg: "Passwords don't match" }); return; }
+    setPwSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pwForm.newPw });
+      if (error) throw error;
+      setPwStatus({ type: "success", msg: "Password updated!" });
+      setPwForm({ newPw: "", confirmPw: "" });
+      setTimeout(() => { setShowPwModal(false); setPwStatus(null); }, 1500);
+    } catch (e) {
+      setPwStatus({ type: "error", msg: e.message });
+    } finally {
+      setPwSaving(false);
+    }
+  };
 
   // Offline detection
   useEffect(() => {
@@ -179,6 +203,17 @@ export default function Dashboard() {
             </span>
           )}
           <button
+            onClick={() => { setShowPwModal(true); setPwStatus(null); setPwForm({ newPw: "", confirmPw: "" }); }}
+            style={{
+              background: "none", border: "none", color: "#9ca3af",
+              fontSize: 11, cursor: "pointer", padding: "4px 6px", transition: "color 0.2s",
+            }}
+            onMouseEnter={(e) => { e.target.style.color = "#1a1a1a"; }}
+            onMouseLeave={(e) => { e.target.style.color = "#9ca3af"; }}
+          >
+            {mob ? "🔑" : "🔑 Password"}
+          </button>
+          <button
             onClick={handleLogout}
             disabled={loggingOut}
             style={{
@@ -198,12 +233,76 @@ export default function Dashboard() {
         </div>
       </nav>
 
+      {/* Change Password Modal */}
+      {showPwModal && (
+        <div
+          onClick={() => setShowPwModal(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.25)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 16, width: "100%", maxWidth: 380,
+              padding: mob ? 20 : 28, boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
+              animation: "pwFadeIn 0.2s ease-out",
+            }}
+          >
+            <style>{`@keyframes pwFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
+            <h3 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 18, margin: "0 0 18px" }}>Change Password</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>New Password</div>
+                <input
+                  type="password" value={pwForm.newPw}
+                  onChange={e => setPwForm(f => ({ ...f, newPw: e.target.value }))}
+                  placeholder="Min 6 characters"
+                  style={{ width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Confirm Password</div>
+                <input
+                  type="password" value={pwForm.confirmPw}
+                  onChange={e => setPwForm(f => ({ ...f, confirmPw: e.target.value }))}
+                  placeholder="Re-enter password"
+                  style={{ width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 }}
+                />
+              </div>
+            </div>
+            {pwStatus && (
+              <div style={{
+                marginTop: 12, padding: "8px 12px", borderRadius: 8, fontSize: 12,
+                background: pwStatus.type === "error" ? "rgba(239,83,80,0.08)" : "rgba(102,187,106,0.12)",
+                color: pwStatus.type === "error" ? "#dc2626" : "#2E7D32",
+              }}>
+                {pwStatus.msg}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, marginTop: 18, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowPwModal(false)}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "1px solid #e5e5e0", background: "#f5f4f1", color: "#6b7280", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >Cancel</button>
+              <button
+                onClick={handleChangePassword}
+                disabled={pwSaving}
+                style={{ padding: "9px 22px", borderRadius: 8, border: "none", background: pwSaving ? "#d1d5db" : "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: pwSaving ? "default" : "pointer" }}
+              >{pwSaving ? "Saving..." : "Update Password"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CONTENT */}
       <div style={{ padding: mob ? "12px 10px" : "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
-        {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} />}
-        {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} />}
-        {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} allEvents={allEvents} />}
-        {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} />}
+        {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} role={role} />}
+        {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} role={role} />}
+        {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} allEvents={allEvents} role={role} />}
+        {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} role={role} />}
         {tab === "pages" && <PagesView allEvents={allEvents} />}
         {tab === "team" && role === "admin" && <TeamView />}
       </div>

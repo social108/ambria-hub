@@ -6,7 +6,10 @@ import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-export default function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest }) {
+export default function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
+  const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
+  const canChangeStatus = role === "admin" || role === "creative";
+  const canDelete = role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ eventName: "", pages: [], budget: "", startDate: "", endDate: "", brief: "", requestedBy: "" });
   const [statusFilter, setStatusFilter] = useState("All");
@@ -41,11 +44,11 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
           </h1>
           <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>Venue team submits ad requests → Creative team builds & runs</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{
+        {canCreate && <button onClick={() => setShowForm(!showForm)} style={{
           padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
           background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
           ...(mob ? { width: "100%" } : {}),
-        }}>+ New Ad Request</button>
+        }}>+ New Ad Request</button>}
       </div>
 
       {/* Budget Overview */}
@@ -136,13 +139,19 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                   <span style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
-                  <select
-                    value={req.status}
-                    onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
-                    style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", cursor: "pointer", fontWeight: 700, minHeight: mob ? 36 : "auto" }}
-                  >
-                    {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  {canChangeStatus ? (
+                    <select
+                      value={req.status}
+                      onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
+                      style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", cursor: "pointer", fontWeight: 700, minHeight: mob ? 36 : "auto" }}
+                    >
+                      {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  ) : (
+                    <span style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", fontWeight: 700 }}>
+                      {stInfo.label}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: mob ? 6 : 12, flexWrap: "wrap", fontSize: mob ? 11 : 12, color: "#6b7280", marginBottom: 8 }}>
                   <span>💰 <strong style={{ color: "#FFB300" }}>₹{parseFloat(req.budget).toLocaleString("en-IN")}</strong></span>
@@ -158,7 +167,7 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
                 </div>
                 {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
               </div>
-              <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>✕</button>
+              {canDelete && <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>✕</button>}
             </div>
           </div>
         );

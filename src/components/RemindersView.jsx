@@ -8,7 +8,9 @@ import useIsMobile from "../hooks/useIsMobile.js";
 
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
-export default function RemindersView({ allEvents, data, updateEvent, deleteEvent, resetBuiltin, setTab }) {
+export default function RemindersView({ allEvents, data, updateEvent, deleteEvent, resetBuiltin, setTab, role }) {
+  const canEdit = role === "admin" || role === "creative";
+  const canDelete = role === "admin";
   const [filter, setFilter] = useState("all_upcoming");
   const [selectedReminder, setSelectedReminder] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -430,11 +432,11 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
 
                   {/* Action buttons */}
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-                    <button onClick={startEdit} style={{
+                    {canEdit && <button onClick={startEdit} style={{
                       padding: "10px 24px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
                       ...(mob ? { flex: 1 } : {}),
-                    }}>Edit Event</button>
+                    }}>Edit Event</button>}
                     <button onClick={goToWorkflow} style={{
                       padding: "10px 20px", borderRadius: 10, border: "1px solid #e5e5e0",
                       background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", fontWeight: 600,
@@ -536,9 +538,9 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
                     {!evt.custom && evt.edited && (
                       <button onClick={handleReset} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer", ...(mob ? { width: "100%" } : {}) }}>↺ Reset to Default</button>
                     )}
-                    <button onClick={handleDelete} style={{ ...(mob ? { width: "100%" } : { marginLeft: "auto" }), padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    {canDelete && <button onClick={handleDelete} style={{ ...(mob ? { width: "100%" } : { marginLeft: "auto" }), padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       {evt.custom ? "Delete" : "Hide Event"}
-                    </button>
+                    </button>}
                   </div>
                 </div>
               )}

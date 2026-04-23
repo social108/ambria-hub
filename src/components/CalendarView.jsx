@@ -8,7 +8,9 @@ import useIsMobile from "../hooks/useIsMobile.js";
 
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
-export default function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, deleteEvent, resetBuiltin, restoreBuiltin, hiddenCount, hiddenBuiltins }) {
+export default function CalendarView({ allEvents, data, updateWorkflow, addEvent, updateEvent, deleteEvent, resetBuiltin, restoreBuiltin, hiddenCount, hiddenBuiltins, role }) {
+  const canEdit = role === "admin" || role === "creative";
+  const canDelete = role === "admin";
   const today = new Date(); today.setHours(0,0,0,0);
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -200,11 +202,11 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
           </h1>
           <p style={{ fontSize: mob ? 11 : 12, color: "#9ca3af" }}>{monthEvents.length} events in {MONTHS_FULL[viewMonth]} · Click a date to view</p>
         </div>
-        <button onClick={() => openAdd("")} style={{
+        {canEdit && <button onClick={() => openAdd("")} style={{
           padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
           background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700,
           ...(mob ? { width: "100%" } : {}),
-        }}>+ Add Event</button>
+        }}>+ Add Event</button>}
       </div>
 
       {/* Month nav + filter */}
@@ -244,7 +246,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               onClick={() => !cell.outside && openView(dateStr)}
             >
               <div className={`cal-day-num ${todayCell ? "today-num" : ""}`}>{cell.day}</div>
-              {!cell.outside && !mob && (
+              {!cell.outside && !mob && canEdit && (
                 <button className="cal-add-btn" onClick={(ev) => { ev.stopPropagation(); openAdd(dateStr); }}>+</button>
               )}
               {evts.slice(0, maxVisible).map((evt, ei) => {
@@ -255,7 +257,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     key={ei}
                     className="cal-evt-dot"
                     style={{ background: `${pColor}20`, color: pColor }}
-                    onClick={(ev) => { ev.stopPropagation(); openEdit(evt); }}
+                    onClick={(ev) => { ev.stopPropagation(); if (canEdit) openEdit(evt); }}
                     title={evt.name}
                   >
                     {evt.actions?.includes("ad") && <span style={{ fontSize: 8 }}>▲</span>}
@@ -280,12 +282,12 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
             <div style={{ fontFamily: "'Sora'", fontSize: mob ? 14 : 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)} — {eventsByDate[selectedDate].length} event{eventsByDate[selectedDate].length > 1 ? "s" : ""}
             </div>
-            <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>
+            {canEdit && <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>}
           </div>
           {eventsByDate[selectedDate].map((evt, i) => {
             const priorityColors = ["#78909C","#FFB300","#F4511E","#D50000"];
             return (
-              <div key={i} className="cal-sidebar-event" onClick={() => openEdit(evt)}>
+              <div key={i} className="cal-sidebar-event" onClick={() => canEdit && openEdit(evt)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 4, height: 28, borderRadius: 2, background: priorityColors[evt.priority] || "#78909C" }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -296,7 +298,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     </div>
                     <div style={{ fontSize: 11, color: "#9ca3af" }}>{evt.cat}</div>
                   </div>
-                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer", flexShrink: 0 }}>✕</button>
+                  {canDelete && <button onClick={(ev) => { ev.stopPropagation(); handleDelete(evt); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "3px 8px", color: "#EF5350", fontSize: 10, cursor: "pointer", flexShrink: 0 }}>✕</button>}
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: evt.note ? 6 : 0 }}>
                   {(evt.actions || []).map(a => {
@@ -446,7 +448,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   {modal.mode === "edit" && !modal.event?.custom && modal.event?.edited && (
                     <button onClick={() => handleReset(modal.event)} style={{ padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(66,165,245,0.3)", background: "rgba(66,165,245,0.1)", color: "#42A5F5", fontSize: 12, fontWeight: 600, cursor: "pointer", ...(mob ? { width: "100%" } : {}) }}>↺ Reset to Default</button>
                   )}
-                  {modal.mode === "edit" && (
+                  {modal.mode === "edit" && canDelete && (
                     <button onClick={() => handleDelete(modal.event)} style={{ ...(mob ? { width: "100%" } : { marginLeft: "auto" }), padding: "10px 18px", borderRadius: 10, border: "1px solid rgba(239,83,80,0.3)", background: "rgba(239,83,80,0.1)", color: "#EF5350", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       {modal.event?.custom ? "Delete" : "Hide Event"}
                     </button>

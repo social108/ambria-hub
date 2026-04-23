@@ -10,15 +10,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png'],
       manifest: {
-        name: 'Ambria Hub',
-        short_name: 'Ambria',
+        name: 'SMO Calendar',
+        short_name: 'SMO Cal',
         theme_color: '#F7F6F3',
         background_color: '#F7F6F3',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/ambria-hub/',
         scope: '/ambria-hub/',
-        description: 'Social media operations dashboard for Ambria Events',
+        description: 'Social Media Operations Calendar for Ambria Events',
         icons: [
           { src: '/ambria-hub/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: '/ambria-hub/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },

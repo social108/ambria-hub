@@ -86,7 +86,7 @@ export default function Login() {
           <div style={{ width: mob ? 64 : 80, height: mob ? 64 : 80, borderRadius: "50%", overflow: "hidden", margin: "0 auto", boxShadow: "0 2px 12px rgba(0,0,0,0.1)" }}>
             <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
-          <div style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: mob ? 16 : 18, color: "#1a1a1a", letterSpacing: 2, marginTop: 12 }}>AMBRIA HUB</div>
+          <div style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: mob ? 16 : 18, color: "#1a1a1a", letterSpacing: 2, marginTop: 12 }}>SMO CALENDAR</div>
         </div>
 
         {/* Tabs */}

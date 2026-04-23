@@ -282,7 +282,7 @@ export default function AmbriaHub() {
   // Count hidden built-ins for restore UI
   const hiddenCount = data.hiddenBuiltins.length;
 
-  if (!loaded) return <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>Loading Ambria Hub...</div>;
+  if (!loaded) return <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>Loading SMO Calendar...</div>;
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F3", minHeight: "100vh", color: "#1a1a1a" }}>
@@ -306,7 +306,7 @@ export default function AmbriaHub() {
           <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
             <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
-          <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+          <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>SMO CALENDAR</span>
         </div>
         {[
           { id: "reminders", label: "🔔 Reminders" },

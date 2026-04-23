@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div style={{ background: "#F7F6F3", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "sans-serif" }}>
-      Loading Ambria Hub...
+      Loading SMO Calendar...
     </div>
   );
 
@@ -193,7 +193,7 @@ export default function Dashboard() {
             <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
               <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
-            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 13, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 13, color: "#1a1a1a", letterSpacing: 1 }}>SMO CALENDAR</span>
             {urgentCount > 0 && (
               <span style={{
                 position: "absolute", top: -6, right: -18,
@@ -247,7 +247,7 @@ export default function Dashboard() {
                 <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
                   <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </div>
-                <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 14, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+                <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 14, color: "#1a1a1a", letterSpacing: 1 }}>SMO CALENDAR</span>
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
@@ -326,7 +326,7 @@ export default function Dashboard() {
             <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
               <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
-            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>AMBRIA HUB</span>
+            <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 15, color: "#1a1a1a", letterSpacing: 1 }}>SMO CALENDAR</span>
           </div>
           <div className="dash-nav-tabs" style={{
             display: "flex", gap: 8, flex: 1, minWidth: 0,

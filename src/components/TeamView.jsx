@@ -22,23 +22,27 @@ export default function TeamView() {
   const { user } = useAuth();
   const { members, loading, error, updateMemberRole, deleteMember } = useTeam();
   const mob = useIsMobile();
-  const [updatingId, setUpdatingId] = useState(null);
+  const [savedId, setSavedId] = useState(null); // flash "Saved" indicator
+  const [removedNote, setRemovedNote] = useState(null); // auth note after removal
 
   const handleRoleChange = async (memberId, newRole) => {
-    setUpdatingId(memberId);
+    setSavedId(null);
     try {
       await updateMemberRole(memberId, newRole);
+      setSavedId(memberId);
+      setTimeout(() => setSavedId(null), 1500);
     } catch (e) {
       alert("Failed to update role: " + e.message);
-    } finally {
-      setUpdatingId(null);
     }
   };
 
   const handleDelete = async (member) => {
-    if (!confirm(`Remove ${member.full_name || member.email} from the team? They won't be able to access anything.`)) return;
+    const name = member.full_name || member.email;
+    if (!confirm(`Remove ${name} from the team? They won't be able to use the app.`)) return;
     try {
       await deleteMember(member.id);
+      setRemovedNote(name);
+      setTimeout(() => setRemovedNote(null), 6000);
     } catch (e) {
       alert("Failed to remove user: " + e.message);
     }
@@ -60,7 +64,7 @@ export default function TeamView() {
           Team Members
         </h2>
         <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9ca3af" }}>
-          {members.length} member{members.length !== 1 ? "s" : ""} — new signups get "Viewer" role until you change it
+          {members.length} member{members.length !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -73,6 +77,16 @@ export default function TeamView() {
         </div>
       )}
 
+      {/* Auth note after removal */}
+      {removedNote && (
+        <div style={{
+          background: "rgba(255,179,0,0.08)", color: "#92750a", padding: "10px 16px",
+          borderRadius: 10, fontSize: 12, marginBottom: 16, lineHeight: 1.5,
+        }}>
+          {removedNote} removed from team. Their auth account still exists in Supabase — go to <strong>Supabase Dashboard &rarr; Authentication &rarr; Users</strong> to fully delete it.
+        </div>
+      )}
+
       {members.length === 0 ? (
         <EmptyState msg="No team members yet. Share the sign-up link with your team!" />
       ) : (
@@ -80,7 +94,7 @@ export default function TeamView() {
           {members.map(m => {
             const badge = ROLE_BADGES[m.role] || ROLE_BADGES.viewer;
             const isCurrentUser = m.id === user?.id;
-            const isUpdating = updatingId === m.id;
+            const justSaved = savedId === m.id;
 
             return (
               <div key={m.id} style={{
@@ -88,7 +102,6 @@ export default function TeamView() {
                 padding: mob ? "14px 14px" : "16px 22px",
                 display: "flex", alignItems: mob ? "flex-start" : "center",
                 flexDirection: mob ? "column" : "row", gap: mob ? 10 : 16,
-                opacity: isUpdating ? 0.6 : 1, transition: "opacity 0.2s",
               }}>
                 {/* Avatar + Name */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
@@ -96,8 +109,7 @@ export default function TeamView() {
                     width: 38, height: 38, borderRadius: "50%",
                     background: badge.bg, color: badge.color,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 700, fontSize: 15, flexShrink: 0,
-                    fontFamily: "'Sora'",
+                    fontWeight: 700, fontSize: 15, flexShrink: 0, fontFamily: "'Sora'",
                   }}>
                     {(m.full_name || m.email || "?").charAt(0).toUpperCase()}
                   </div>
@@ -108,18 +120,14 @@ export default function TeamView() {
                     }}>
                       {m.full_name || "Unnamed"}{isCurrentUser ? " (you)" : ""}
                     </div>
-                    <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>{m.email}</div>
+                    <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>
+                      Joined {formatDate(m.created_at)}
+                    </div>
                   </div>
                 </div>
 
-                {/* Joined date */}
-                <div style={{ flexShrink: 0, minWidth: mob ? undefined : 110 }}>
-                  <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Joined</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>{formatDate(m.created_at)}</div>
-                </div>
-
-                {/* Role dropdown */}
-                <div style={{ flexShrink: 0 }}>
+                {/* Role dropdown + saved flash */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   {isCurrentUser ? (
                     <span style={{
                       fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 6,
@@ -132,11 +140,10 @@ export default function TeamView() {
                     <select
                       value={m.role}
                       onChange={e => handleRoleChange(m.id, e.target.value)}
-                      disabled={isUpdating}
                       style={{
                         padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
                         border: "1px solid #e5e5e0", background: badge.bg, color: badge.color,
-                        cursor: "pointer", appearance: "auto",
+                        cursor: "pointer",
                       }}
                     >
                       {ROLE_OPTIONS.map(o => (
@@ -144,21 +151,27 @@ export default function TeamView() {
                       ))}
                     </select>
                   )}
+                  {justSaved && (
+                    <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 600, animation: "fadeIn 0.2s ease" }}>
+                      Saved ✓
+                    </span>
+                  )}
                 </div>
 
-                {/* Delete button */}
+                {/* Remove button */}
                 {!isCurrentUser && (
                   <button
                     onClick={() => handleDelete(m)}
                     style={{
-                      background: "none", border: "none", color: "#9ca3af",
-                      fontSize: 12, cursor: "pointer", padding: "4px 8px",
+                      background: "none", border: "none", color: "#d1d5db",
+                      fontSize: 16, cursor: "pointer", padding: "4px 8px",
                       transition: "color 0.2s", flexShrink: 0,
                     }}
                     onMouseEnter={e => { e.target.style.color = "#dc2626"; }}
-                    onMouseLeave={e => { e.target.style.color = "#9ca3af"; }}
+                    onMouseLeave={e => { e.target.style.color = "#d1d5db"; }}
+                    title="Remove from team"
                   >
-                    Remove
+                    🗑
                   </button>
                 )}
               </div>
@@ -166,6 +179,16 @@ export default function TeamView() {
           })}
         </div>
       )}
+
+      {/* Info footer */}
+      <div style={{
+        marginTop: 24, padding: "14px 18px", background: "#f8f8f6",
+        border: "1px solid #eeeee9", borderRadius: 12, fontSize: 12, color: "#9ca3af", lineHeight: 1.6,
+      }}>
+        Team members sign up at the login page. Change their role here. Default role is Viewer (read-only).
+      </div>
+
+      <style>{`@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>
     </div>
   );
 }

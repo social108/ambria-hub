@@ -151,21 +151,23 @@ export default function Dashboard() {
           overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
         }}>
           {[
-            { id: "reminders", label: mob ? "🔔" : "🔔 Reminders" },
-            { id: "calendar", label: mob ? "◎" : "◎ Calendar" },
-            { id: "workflow", label: mob ? "✦" : "✦ Workflow Board" },
-            { id: "ads", label: mob ? "▲" : "▲ Ad Requests" },
-            { id: "pages", label: mob ? "◆" : "◆ Pages" },
-            ...(role === "admin" ? [{ id: "team", label: mob ? "👥" : "👥 Team" }] : []),
+            { id: "reminders", icon: "🔔", label: "Reminders" },
+            { id: "calendar", icon: "◎", label: "Calendar" },
+            { id: "workflow", icon: "✦", label: "Workflow" },
+            { id: "ads", icon: "▲", label: "Ad Requests" },
+            { id: "pages", icon: "◆", label: "Pages" },
+            ...(role === "admin" ? [{ id: "team", icon: "👥", label: "Team" }] : []),
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: mob ? "6px 10px" : "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+              padding: mob ? "6px 12px" : "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
               fontSize: mob ? 11 : 13, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
               background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
               color: tab === t.id ? "#1a1a1a" : "#9ca3af",
               transition: "all 0.2s", position: "relative",
+              display: "flex", alignItems: "center", gap: 4,
             }}>
-              {t.label}
+              <span style={{ fontSize: mob ? 14 : 14 }}>{t.icon}</span>
+              <span>{t.label}</span>
               {t.id === "reminders" && (() => {
                 const urgentCount = allEvents.filter(e => {
                   const d = daysUntil(e.date);
@@ -211,7 +213,7 @@ export default function Dashboard() {
             onMouseEnter={(e) => { e.target.style.color = "#1a1a1a"; }}
             onMouseLeave={(e) => { e.target.style.color = "#9ca3af"; }}
           >
-            {mob ? "🔑" : "🔑 Password"}
+            Password
           </button>
           <button
             onClick={handleLogout}

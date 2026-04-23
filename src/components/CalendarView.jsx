@@ -422,6 +422,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                 <div style={{ marginBottom: 14 }}>
                   <FieldLabel>Post on Pages</FieldLabel>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {(() => { const allIds = PAGES.map(p => p.id); const allSel = allIds.every(id => form.pages.includes(id)); return (
+                      <button onClick={() => setForm(f => ({ ...f, pages: allSel ? [] : allIds }))} style={{
+                        padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+                        border: allSel ? "1px solid #1a1a1a" : "1px solid #e5e5e0",
+                        background: allSel ? "#1a1a1a" : "#ffffff",
+                        color: allSel ? "#ffffff" : "#9ca3af",
+                      }}>All Pages</button>
+                    ); })()}
                     {PAGES.map(pg => (
                       <button key={pg.id} onClick={() => toggleFormPage(pg.id)} style={{
                         padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",

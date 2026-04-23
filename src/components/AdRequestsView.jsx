@@ -93,6 +93,14 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(() => { const adIds = PAGES.filter(p => !p.noAds).map(p => p.id); const allSel = adIds.every(id => form.pages.includes(id)); return (
+                <button onClick={() => setForm(f => ({ ...f, pages: allSel ? [] : adIds }))} style={{
+                  padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
+                  border: allSel ? "1px solid #1a1a1a" : "1px solid #e5e5e0",
+                  background: allSel ? "#1a1a1a" : "#ffffff",
+                  color: allSel ? "#ffffff" : "#9ca3af",
+                }}>All Pages</button>
+              ); })()}
               {PAGES.filter(p => !p.noAds).map(pg => (
                 <button key={pg.id} onClick={() => togglePage(pg.id)} style={{
                   padding: "6px 14px", borderRadius: 8, border: `1px solid ${form.pages.includes(pg.id) ? pg.color : "#e5e5e0"}`,

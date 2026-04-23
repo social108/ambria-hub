@@ -4,7 +4,7 @@ import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../l
 import Chip from "./shared/Chip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-export default function WorkflowView({ data, updateWorkflow, allEvents, role }) {
+export default function WorkflowView({ data, updateWorkflowEvent, allEvents, role }) {
   const canMove = role === "admin" || role === "creative";
   const [filter, setFilter] = useState("upcoming");
   const [pageFilter, setPageFilter] = useState("All");
@@ -13,29 +13,30 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
   const [expandedCard, setExpandedCard] = useState(null);
   const mob = useIsMobile();
 
+  // One task per event (not per page)
   const tasks = useMemo(() => {
     const list = [];
     allEvents.forEach(e => {
       const d = daysUntil(e.date);
+      const key = `${e.date}-${e.name}`;
+
+      // Page filter: skip events that don't include the selected page
+      if (pageFilter !== "All" && !(e.pages || []).includes(pageFilter)) return;
+
+      // Determine event-level status from first page (all pages share the same status)
+      const firstPage = (e.pages || [])[0];
+      const st = firstPage ? (data.workflow[key]?.[firstPage]?.status || "pending") : "pending";
+
       const passFilter = filter === "all" ? true
         : filter === "upcoming" ? (d >= -3 && d <= 45)
         : filter === "thisweek" ? (d >= -1 && d <= 7)
-        : filter === "overdue" ? (() => {
-            return d < 0 && e.pages.some(pid => {
-              const st = data.workflow[`${e.date}-${e.name}`]?.[pid]?.status;
-              return !st || st === "pending" || st === "creative_wip";
-            });
-          })()
+        : filter === "overdue" ? (d < 0 && (st === "pending" || st === "creative_wip"))
         : true;
       if (!passFilter) return;
 
-      const pages = pageFilter === "All" ? e.pages : e.pages.filter(p => p === pageFilter);
-      pages.forEach(pid => {
-        const key = `${e.date}-${e.name}`;
-        const st = data.workflow[key]?.[pid]?.status || "pending";
-        const pg = PAGES.find(p => p.id === pid);
-        list.push({ eventKey: key, event: e, pageId: pid, page: pg, status: st, days: d });
-      });
+      const pageObjects = (e.pages || []).map(pid => PAGES.find(p => p.id === pid)).filter(Boolean);
+
+      list.push({ eventKey: key, event: e, pages: pageObjects, pageIds: e.pages || [], status: st, days: d });
     });
     return list;
   }, [data.workflow, filter, pageFilter, allEvents]);
@@ -57,7 +58,7 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
 
   const handleDrop = (colId) => {
     if (dragItem && dragItem.status !== colId) {
-      updateWorkflow(dragItem.eventKey, dragItem.pageId, "status", colId);
+      updateWorkflowEvent(dragItem.eventKey, dragItem.pageIds, colId);
     }
     setDragItem(null);
     setDragOverCol(null);
@@ -100,11 +101,6 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
           font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 600;
           color: #1a1a1a; line-height: 1.3; margin-bottom: 5px;
         }
-        .kanban-card .card-page {
-          display: inline-flex; align-items: center; gap: 4px;
-          font-size: 10.5px; font-weight: 500; padding: 2px 7px; border-radius: 5px;
-          margin-bottom: 6px;
-        }
         .kanban-card .card-date { font-size: 10px; color: #9ca3af; }
         .kanban-card .card-actions { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
         .kanban-card .card-actions span {
@@ -112,6 +108,11 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
         }
         .card-urgency {
           position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 10px 10px 0 0;
+        }
+        .card-pages-row { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 6px; }
+        .card-page-badge {
+          display: inline-flex; align-items: center; gap: 3px;
+          font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
         }
         .card-expanded-note {
           margin-top: 8px; padding: 8px 10px; background: #f8f8f6;
@@ -153,14 +154,14 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
         <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Workflow Board
         </h1>
-        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>{mob ? "Tap cards to move · Swipe columns" : "Drag cards between columns or click to move · Each card = 1 event × 1 page"}</p>
+        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>{mob ? "Tap cards to move · Swipe columns" : "Drag cards between columns or click to move"}</p>
       </div>
 
       {/* Stats */}
       <div className="kanban-stats-bar">
         <div className="kanban-stat">
           <span className="ks-num" style={{ color: "#C9A84C" }}>{totalTasks}</span>
-          <span className="ks-label">Total Tasks</span>
+          <span className="ks-label">Total Events</span>
         </div>
         <div className="kanban-stat">
           <span className="ks-num" style={{ color: "#66BB6A" }}>{doneTasks}</span>
@@ -238,9 +239,8 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
                   </div>
                 )}
                 {cards.map(task => {
-                  const cardKey = `${task.eventKey}__${task.pageId}`;
-                  const isExpanded = expandedCard === cardKey;
-                  const isDragging = dragItem && dragItem.eventKey === task.eventKey && dragItem.pageId === task.pageId;
+                  const isExpanded = expandedCard === task.eventKey;
+                  const isDragging = dragItem && dragItem.eventKey === task.eventKey;
                   const urgencyColor = task.days < 0 ? "#EF5350" : task.days <= 3 ? "#FF7043" : task.days <= 7 ? "#FFB300" : "transparent";
 
                   const colIndex = KANBAN_COLUMNS.findIndex(c => c.id === col.id);
@@ -248,17 +248,22 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
 
                   return (
                     <div
-                      key={cardKey}
+                      key={task.eventKey}
                       className={`kanban-card ${isDragging ? "dragging" : ""}`}
                       draggable={!mob && canMove}
                       onDragStart={() => canMove && handleDragStart(task)}
                       onDragEnd={() => { setDragItem(null); setDragOverCol(null); }}
-                      onClick={() => setExpandedCard(isExpanded ? null : cardKey)}
+                      onClick={() => setExpandedCard(isExpanded ? null : task.eventKey)}
                     >
                       <div className="card-urgency" style={{ background: urgencyColor }} />
-                      <div className="card-page" style={{ background: `${task.page.color}18`, color: task.page.color }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: task.page.color, display: "inline-block" }} />
-                        {task.page.name.replace("Ambria ", "")}
+                      {/* Page badges */}
+                      <div className="card-pages-row">
+                        {task.pages.map(pg => (
+                          <span key={pg.id} className="card-page-badge" style={{ background: `${pg.color}18`, color: pg.color }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: pg.color, display: "inline-block" }} />
+                            {pg.name.replace("Ambria ", "")}
+                          </span>
+                        ))}
                       </div>
                       <div className="card-event">{task.event.name}</div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -305,7 +310,7 @@ export default function WorkflowView({ data, updateWorkflow, allEvents, role }) 
                                 className="card-move-btn"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
-                                  updateWorkflow(task.eventKey, task.pageId, "status", target.id);
+                                  updateWorkflowEvent(task.eventKey, task.pageIds, target.id);
                                   setExpandedCard(null);
                                 }}
                                 style={{ borderColor: `${target.color}30`, color: target.color }}

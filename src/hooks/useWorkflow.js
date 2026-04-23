@@ -56,5 +56,20 @@ export default function useWorkflow({ onSyncError } = {}) {
     if (error) { console.error("updateWorkflow error:", error); onSyncError?.("Sync error — retrying..."); }
   }, [onSyncError]);
 
-  return { workflowData, updateWorkflow, loading, refetch: fetchData };
+  // Update status for ALL pages of an event at once
+  const updateWorkflowEvent = useCallback(async (eventKey, pageIds, status) => {
+    // Optimistic local update
+    setWorkflowData(prev => {
+      const wf = { ...prev };
+      if (!wf[eventKey]) wf[eventKey] = {};
+      pageIds.forEach(pid => { wf[eventKey][pid] = { status }; });
+      return wf;
+    });
+
+    const rows = pageIds.map(pid => ({ event_key: eventKey, page_id: pid, status }));
+    const { error } = await supabase.from("workflow_status").upsert(rows, { onConflict: "event_key,page_id" });
+    if (error) { console.error("updateWorkflowEvent error:", error); onSyncError?.("Sync error — retrying..."); }
+  }, [onSyncError]);
+
+  return { workflowData, updateWorkflow, updateWorkflowEvent, loading, refetch: fetchData };
 }

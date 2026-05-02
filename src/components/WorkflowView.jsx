@@ -56,33 +56,71 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
   const [expandedCard, setExpandedCard] = useState(null);
   const mob = useIsMobile();
 
-  // One task per event (not per page)
+  // Tasks come from two sources:
+  //   1) Calendar events → one card per event (all pages share status)
+  //   2) Approved ad requests → one card per page, keyed by `ad-${req.id}` in workflow_status
   const tasks = useMemo(() => {
     const list = [];
+    const passDateFilter = (d, st) =>
+      filter === "all" ? true
+      : filter === "upcoming" ? (d >= -3 && d <= 45)
+      : filter === "thisweek" ? (d >= -1 && d <= 7)
+      : filter === "overdue" ? (d < 0 && (st === "pending" || st === "creative_wip"))
+      : true;
+
+    // 1) Calendar events
     allEvents.forEach(e => {
       const d = daysUntil(e.date);
       const key = `${e.date}-${e.name}`;
-
-      // Page filter: skip events that don't include the selected page
       if (pageFilter !== "All" && !(e.pages || []).includes(pageFilter)) return;
-
-      // Determine event-level status from first page (all pages share the same status)
       const firstPage = (e.pages || [])[0];
       const st = firstPage ? (data.workflow[key]?.[firstPage]?.status || "pending") : "pending";
-
-      const passFilter = filter === "all" ? true
-        : filter === "upcoming" ? (d >= -3 && d <= 45)
-        : filter === "thisweek" ? (d >= -1 && d <= 7)
-        : filter === "overdue" ? (d < 0 && (st === "pending" || st === "creative_wip"))
-        : true;
-      if (!passFilter) return;
-
+      if (!passDateFilter(d, st)) return;
       const pageObjects = (e.pages || []).map(pid => PAGES.find(p => p.id === pid)).filter(Boolean);
-
-      list.push({ eventKey: key, event: e, pages: pageObjects, pageIds: e.pages || [], status: st, days: d });
+      list.push({ taskId: key, eventKey: key, event: e, pages: pageObjects, pageIds: e.pages || [], status: st, days: d, isAdRequest: false });
     });
+
+    // 2) Approved ad requests — one card per workflow_status row
+    const adRequestsById = new Map((data.adRequests || []).map(r => [r.id, r]));
+    Object.entries(data.workflow || {}).forEach(([eventKey, pages]) => {
+      if (!eventKey.startsWith("ad-")) return;
+      const reqId = eventKey.substring(3);
+      const req = adRequestsById.get(reqId);
+      if (!req || req.status !== "approved") return;
+      const eventDate = req.startDate || req.endDate || new Date().toISOString().split("T")[0];
+      const d = daysUntil(eventDate);
+
+      Object.entries(pages).forEach(([pageId, info]) => {
+        if (pageFilter !== "All" && pageId !== pageFilter) return;
+        const pgObj = PAGES.find(p => p.id === pageId);
+        if (!pgObj) return;
+        const st = info?.status || "pending";
+        if (!passDateFilter(d, st)) return;
+
+        list.push({
+          taskId: `${eventKey}:${pageId}`,
+          eventKey,
+          event: {
+            name: req.eventName,
+            date: eventDate,
+            pages: [pageId],
+            actions: ["ad"],
+            adLeadDays: 0,
+            note: req.brief || "",
+            cat: "Ad Request",
+            priority: 2,
+          },
+          pages: [pgObj],
+          pageIds: [pageId],
+          status: st,
+          days: d,
+          isAdRequest: true,
+        });
+      });
+    });
+
     return list;
-  }, [data.workflow, filter, pageFilter, allEvents]);
+  }, [data.workflow, data.adRequests, filter, pageFilter, allEvents]);
 
   const columns = useMemo(() => {
     const cols = {};
@@ -282,8 +320,8 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
                   </div>
                 )}
                 {cards.map(task => {
-                  const isExpanded = expandedCard === task.eventKey;
-                  const isDragging = dragItem && dragItem.eventKey === task.eventKey;
+                  const isExpanded = expandedCard === task.taskId;
+                  const isDragging = dragItem && dragItem.taskId === task.taskId;
                   const urgencyColor = task.days < 0 ? "#EF5350" : task.days <= 3 ? "#FF7043" : task.days <= 7 ? "#FFB300" : "transparent";
 
                   const colIndex = KANBAN_COLUMNS.findIndex(c => c.id === col.id);
@@ -291,14 +329,24 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
 
                   return (
                     <div
-                      key={task.eventKey}
+                      key={task.taskId}
                       className={`kanban-card ${isDragging ? "dragging" : ""}`}
                       draggable={!mob && canMove}
                       onDragStart={() => canMove && handleDragStart(task)}
                       onDragEnd={() => { setDragItem(null); setDragOverCol(null); }}
-                      onClick={() => setExpandedCard(isExpanded ? null : task.eventKey)}
+                      onClick={() => setExpandedCard(isExpanded ? null : task.taskId)}
                     >
                       <div className="card-urgency" style={{ background: urgencyColor }} />
+                      {task.isAdRequest && (
+                        <div style={{ marginBottom: 5 }}>
+                          <span style={{
+                            fontSize: 9, fontWeight: 800, letterSpacing: 0.6,
+                            padding: "2px 7px", borderRadius: 4,
+                            background: "rgba(245,158,11,0.15)", color: "#92400e",
+                            textTransform: "uppercase",
+                          }}>💰 Ad Request</span>
+                        </div>
+                      )}
                       {/* Page badges */}
                       <div className="card-pages-row">
                         {task.pages.map(pg => (

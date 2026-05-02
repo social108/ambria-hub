@@ -1,26 +1,20 @@
 import { useState, useMemo } from "react";
 import { PAGES, AD_REQUEST_STATUS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
+import { supabase } from "../supabaseClient.js";
 import Chip from "./shared/Chip.jsx";
 import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-// Total budget spent for an ad request, summed from workflow_status rows.
-// We store budget on the FIRST page row of each event (one input per workflow card),
-// and event_key has format "YYYY-MM-DD-EventName", so match by trailing name.
+// Total budget spent for an ad request, summed across its per-page workflow cards.
+// Approved ad requests live under event_key = `ad-${req.id}` with one row per page,
+// and each page card on the workflow board has its own budget input.
 function getRequestSpent(req, workflowData) {
-  if (!workflowData || !req.eventName || !(req.pages || []).length) return 0;
-  let total = 0;
-  Object.entries(workflowData).forEach(([eventKey, pages]) => {
-    if (eventKey.length <= 11) return;
-    const namePart = eventKey.substring(11); // strip "YYYY-MM-DD-"
-    if (namePart !== req.eventName) return;
-    const firstPid = req.pages.find(pid => pages[pid]);
-    if (!firstPid) return;
-    total += parseFloat(pages[firstPid]?.budget) || 0;
-  });
-  return total;
+  if (!workflowData) return 0;
+  const pages = workflowData[`ad-${req.id}`];
+  if (!pages) return 0;
+  return Object.values(pages).reduce((s, p) => s + (parseFloat(p?.budget) || 0), 0);
 }
 
 // Map legacy statuses (creative_wip, live, completed, requested) onto the
@@ -31,7 +25,7 @@ function normalizeStatus(s) {
   return "approved"; // creative_wip, approved, live, completed
 }
 
-export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, addEvent, updateWorkflowEvent, role }) {
+export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
   const canDecide = role === "admin" || role === "creative";
   const canDelete = role === "admin";
@@ -40,6 +34,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
   const [statusFilter, setStatusFilter] = useState("All");
   const [rejectTarget, setRejectTarget] = useState(null); // { id, eventName }
   const [rejectReason, setRejectReason] = useState("");
+  const [approvingId, setApprovingId] = useState(null);
   const mob = useIsMobile();
 
   const filteredAds = useMemo(() => {
@@ -66,23 +61,26 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
   };
 
   const handleApprove = async (req) => {
-    await updateAdRequest(req.id, { status: "approved", rejectReason: "" });
-    // Create a custom event so the workflow board renders kanban cards for this request
-    const eventDate = req.startDate || req.endDate || new Date().toISOString().split("T")[0];
-    await addEvent({
-      name: req.eventName,
-      date: eventDate,
-      cat: "Business",
-      actions: ["ad"],
-      pages: req.pages || [],
-      priority: 2,
-      adLeadDays: 0,
-      note: req.brief || "",
-    });
-    // Seed pending workflow_status rows for each page
-    if ((req.pages || []).length > 0) {
-      const eventKey = `${eventDate}-${req.eventName}`;
-      await updateWorkflowEvent(eventKey, req.pages, "pending");
+    if (approvingId) return; // guard against double-click
+    setApprovingId(req.id);
+    try {
+      await updateAdRequest(req.id, { status: "approved", rejectReason: "" });
+      const pages = req.pages || [];
+      if (pages.length > 0) {
+        const eventKey = `ad-${req.id}`;
+        const rows = pages.map(pageId => ({
+          event_key: eventKey,
+          page_id: pageId,
+          status: "pending",
+        }));
+        // ignoreDuplicates so re-approving never adds a second row per page
+        const { error } = await supabase
+          .from("workflow_status")
+          .upsert(rows, { onConflict: "event_key,page_id", ignoreDuplicates: true });
+        if (error) console.error("handleApprove workflow upsert error:", error);
+      }
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -238,16 +236,28 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
                 {norm === "pending" && (
                   canDecide ? (
                     <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                      <button onClick={() => handleApprove(req)} style={{
-                        padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer",
-                        background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: 13,
-                        ...(mob ? { flex: 1 } : {}),
-                      }}>✅ Approve</button>
-                      <button onClick={() => openRejectModal(req)} style={{
-                        padding: "8px 20px", borderRadius: 8, border: "1px solid #ef4444", cursor: "pointer",
-                        background: "transparent", color: "#ef4444", fontWeight: 600, fontSize: 13,
-                        ...(mob ? { flex: 1 } : {}),
-                      }}>❌ Reject</button>
+                      <button
+                        onClick={() => handleApprove(req)}
+                        disabled={approvingId === req.id}
+                        style={{
+                          padding: "8px 20px", borderRadius: 8, border: "none",
+                          cursor: approvingId === req.id ? "default" : "pointer",
+                          background: approvingId === req.id ? "#86efac" : "#22c55e",
+                          color: "#fff", fontWeight: 600, fontSize: 13,
+                          ...(mob ? { flex: 1 } : {}),
+                        }}
+                      >{approvingId === req.id ? "Approving…" : "✅ Approve"}</button>
+                      <button
+                        onClick={() => openRejectModal(req)}
+                        disabled={approvingId === req.id}
+                        style={{
+                          padding: "8px 20px", borderRadius: 8, border: "1px solid #ef4444",
+                          cursor: approvingId === req.id ? "default" : "pointer",
+                          background: "transparent", color: "#ef4444", fontWeight: 600, fontSize: 13,
+                          opacity: approvingId === req.id ? 0.5 : 1,
+                          ...(mob ? { flex: 1 } : {}),
+                        }}
+                      >❌ Reject</button>
                     </div>
                   ) : (
                     <span style={{ padding: "4px 12px", borderRadius: 8, background: stInfo.bg, color: stInfo.color, fontWeight: 700, fontSize: 12 }}>

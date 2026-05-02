@@ -460,8 +460,8 @@ export default function Dashboard() {
       <div style={{ padding: mob ? "12px 10px" : "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
         {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} workflowData={workflowData} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} role={role} />}
         {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} role={role} />}
-        {tab === "workflow" && <WorkflowView data={data} updateWorkflowEvent={updateWorkflowEvent} allEvents={allEvents} role={role} />}
-        {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} role={role} />}
+        {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} updateWorkflowEvent={updateWorkflowEvent} allEvents={allEvents} role={role} />}
+        {tab === "ads" && <AdRequestsView data={data} workflowData={workflowData} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} role={role} />}
         {tab === "pages" && <PagesView allEvents={allEvents} />}
         {tab === "team" && role === "admin" && <TeamView />}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PAGES, AD_REQUEST_STATUS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
@@ -6,23 +6,45 @@ import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-export default function AdRequestsView({ data, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
+// Total budget spent for an ad request, summed from workflow_status rows.
+// We store budget on the FIRST page row of each event (one input per workflow card),
+// and event_key has format "YYYY-MM-DD-EventName", so match by trailing name.
+function getRequestSpent(req, workflowData) {
+  if (!workflowData || !req.eventName || !(req.pages || []).length) return 0;
+  let total = 0;
+  Object.entries(workflowData).forEach(([eventKey, pages]) => {
+    if (eventKey.length <= 11) return;
+    const namePart = eventKey.substring(11); // strip "YYYY-MM-DD-"
+    if (namePart !== req.eventName) return;
+    const firstPid = req.pages.find(pid => pages[pid]);
+    if (!firstPid) return;
+    total += parseFloat(pages[firstPid]?.budget) || 0;
+  });
+  return total;
+}
+
+export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
   const canChangeStatus = role === "admin" || role === "creative";
   const canDelete = role === "admin";
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ eventName: "", pages: [], budget: "", startDate: "", endDate: "", brief: "", requestedBy: "" });
+  const [form, setForm] = useState({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
   const [statusFilter, setStatusFilter] = useState("All");
   const mob = useIsMobile();
 
   const filteredAds = statusFilter === "All" ? data.adRequests : data.adRequests.filter(a => a.status === statusFilter);
-  const totalBudget = data.adRequests.reduce((s, a) => s + (parseFloat(a.budget) || 0), 0);
-  const liveBudget = data.adRequests.filter(a => a.status === "live" || a.status === "approved").reduce((s, a) => s + (parseFloat(a.budget) || 0), 0);
+
+  // Total spent across all approved/live/completed ad requests (from workflow_status budgets)
+  const totalSpent = useMemo(() => {
+    return data.adRequests
+      .filter(a => ["approved", "live", "completed"].includes(a.status))
+      .reduce((s, a) => s + getRequestSpent(a, workflowData), 0);
+  }, [data.adRequests, workflowData]);
 
   const handleSubmit = () => {
-    if (!form.eventName || form.pages.length === 0 || !form.budget) return;
+    if (!form.eventName || form.pages.length === 0) return;
     addAdRequest(form);
-    setForm({ eventName: "", pages: [], budget: "", startDate: "", endDate: "", brief: "", requestedBy: "" });
+    setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
     setShowForm(false);
   };
 
@@ -51,31 +73,24 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
         }}>+ New Ad Request</button>}
       </div>
 
-      {/* Budget Overview */}
+      {/* Budget Overview — single Total Spent stat (entered via workflow board) */}
       <div className="ad-budget-row" style={{
         display: "flex", gap: 10, marginBottom: 16,
         ...(mob ? { overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", flexWrap: "nowrap" } : { flexWrap: "wrap" }),
       }}>
-        {[
-          { label: "Total Requests", val: data.adRequests.length, color: "#C9A84C" },
-          { label: "Total Budget", val: `₹${totalBudget.toLocaleString("en-IN")}`, color: "#FFB300" },
-          { label: "Active/Approved", val: `₹${liveBudget.toLocaleString("en-IN")}`, color: "#66BB6A" },
-        ].map(s => (
-          <div key={s.label} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "12px 18px", display: "flex", alignItems: "center", gap: mob ? 6 : 10, flexShrink: 0 }}>
-            <span style={{ fontFamily: "'Sora'", fontSize: mob ? 16 : 20, fontWeight: 700, color: s.color }}>{s.val}</span>
-            <span style={{ fontSize: mob ? 9 : 11, color: "#9ca3af", textTransform: "uppercase", whiteSpace: "nowrap" }}>{s.label}</span>
-          </div>
-        ))}
-        {PAGES.filter(p => !p.noAds).map(pg => {
-          const pageBudget = data.adRequests.filter(a => a.pages?.includes(pg.id)).reduce((s,a) => s + (parseFloat(a.budget) || 0) / (a.pages?.length || 1), 0);
-          return pageBudget > 0 ? (
-            <div key={pg.id} style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "6px 10px" : "8px 14px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: pg.color }} />
-              <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{pg.name}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: pg.color }}>₹{Math.round(pageBudget).toLocaleString("en-IN")}</span>
+        <div style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "10px 14px" : "14px 20px", display: "flex", alignItems: "center", gap: mob ? 8 : 12, flexShrink: 0 }}>
+          <span style={{ fontSize: mob ? 16 : 20 }}>💰</span>
+          <div>
+            <div style={{ fontFamily: "'Sora'", fontSize: mob ? 16 : 22, fontWeight: 700, color: "#FFB300" }}>
+              ₹{totalSpent.toLocaleString("en-IN")}
             </div>
-          ) : null;
-        })}
+            <div style={{ fontSize: mob ? 9 : 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5 }}>Total Budget Spent</div>
+          </div>
+        </div>
+        <div style={{ background: "#ffffff", border: "1px solid #eeeee9", borderRadius: 10, padding: mob ? "8px 12px" : "12px 18px", display: "flex", alignItems: "center", gap: mob ? 6 : 10, flexShrink: 0 }}>
+          <span style={{ fontFamily: "'Sora'", fontSize: mob ? 16 : 20, fontWeight: 700, color: "#C9A84C" }}>{data.adRequests.length}</span>
+          <span style={{ fontSize: mob ? 9 : 11, color: "#9ca3af", textTransform: "uppercase", whiteSpace: "nowrap" }}>Total Requests</span>
+        </div>
       </div>
 
       {/* NEW REQUEST FORM */}
@@ -85,10 +100,12 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
           <div style={{ fontSize: 16, fontFamily: "'Sora'", fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>New Ad Request</div>
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
-            <InputField label="Budget (₹)" value={form.budget} onChange={v => setForm(f => ({...f, budget: v}))} placeholder="e.g. 25000" type="number" />
             <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({...f, startDate: v}))} type="date" />
             <InputField label="Ad End Date" value={form.endDate} onChange={v => setForm(f => ({...f, endDate: v}))} type="date" />
             <InputField label="Requested By" value={form.requestedBy} onChange={v => setForm(f => ({...f, requestedBy: v}))} placeholder="e.g. Venue Manager name" />
+          </div>
+          <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(255,179,0,0.08)", border: "1px solid rgba(255,179,0,0.2)", borderRadius: 8, fontSize: 11, color: "#92400e" }}>
+            💡 Budget is entered later, on the workflow board, once the ad is posted/live.
           </div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
@@ -137,6 +154,8 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
       {filteredAds.length === 0 && <EmptyState msg="No ad requests yet. Click '+ New Ad Request' to create one." />}
       {[...filteredAds].reverse().map(req => {
         const stInfo = AD_REQUEST_STATUS[req.status] || AD_REQUEST_STATUS.requested;
+        const showSpent = ["approved", "live", "completed"].includes(req.status);
+        const spent = showSpent ? getRequestSpent(req, workflowData) : 0;
         return (
           <div key={req.id} style={{
             background: "#ffffff", border: "1px solid #eeeee9",
@@ -162,7 +181,13 @@ export default function AdRequestsView({ data, addAdRequest, updateAdRequest, de
                   )}
                 </div>
                 <div style={{ display: "flex", gap: mob ? 6 : 12, flexWrap: "wrap", fontSize: mob ? 11 : 12, color: "#6b7280", marginBottom: 8 }}>
-                  <span>💰 <strong style={{ color: "#FFB300" }}>₹{parseFloat(req.budget).toLocaleString("en-IN")}</strong></span>
+                  {showSpent && (
+                    spent > 0 ? (
+                      <span>💰 Total Spent: <strong style={{ color: "#FFB300" }}>₹{spent.toLocaleString("en-IN")}</strong></span>
+                    ) : (
+                      <span style={{ color: "#9ca3af" }}>💰 Budget: Not yet entered</span>
+                    )
+                  )}
                   {req.startDate && <span>📅 {formatDate(req.startDate)} → {req.endDate ? formatDate(req.endDate) : "TBD"}</span>}
                   {req.requestedBy && <span>👤 {req.requestedBy}</span>}
                   {!mob && <span style={{ color: "#d1d5db" }}>Created {new Date(req.createdAt).toLocaleDateString("en-IN")}</span>}

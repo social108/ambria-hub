@@ -24,11 +24,14 @@ export default function useWorkflow({ onSyncError } = {}) {
 
     retryCount.current = 0;
 
-    // Convert rows to nested object: { [event_key]: { [page_id]: { status } } }
+    // Convert rows to nested object: { [event_key]: { [page_id]: { status, budget } } }
     const nested = {};
     (data || []).forEach(row => {
       if (!nested[row.event_key]) nested[row.event_key] = {};
-      nested[row.event_key][row.page_id] = { status: row.status };
+      nested[row.event_key][row.page_id] = {
+        status: row.status,
+        budget: parseFloat(row.budget) || 0,
+      };
     });
     setWorkflowData(nested);
     setLoading(false);
@@ -45,14 +48,17 @@ export default function useWorkflow({ onSyncError } = {}) {
       const wf = { ...prev };
       if (!wf[eventKey]) wf[eventKey] = {};
       if (!wf[eventKey][pageId]) wf[eventKey][pageId] = {};
-      wf[eventKey][pageId][field] = value;
+      wf[eventKey][pageId] = { ...wf[eventKey][pageId], [field]: value };
       return wf;
     });
 
-    const { error } = await supabase.from("workflow_status").upsert(
-      { event_key: eventKey, page_id: pageId, status: value },
-      { onConflict: "event_key,page_id" }
-    );
+    // Only send the column we're updating; partial upsert preserves the other columns on conflict
+    const row = { event_key: eventKey, page_id: pageId };
+    if (field === "status") row.status = value;
+    else if (field === "budget") row.budget = parseFloat(value) || 0;
+    else row[field] = value;
+
+    const { error } = await supabase.from("workflow_status").upsert(row, { onConflict: "event_key,page_id" });
     if (error) { console.error("updateWorkflow error:", error); onSyncError?.("Sync error — retrying..."); }
   }, [onSyncError]);
 

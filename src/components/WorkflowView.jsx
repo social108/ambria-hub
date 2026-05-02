@@ -1,10 +1,53 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PAGES, ACTION_TYPES, KANBAN_COLUMNS } from "../lib/constants.js";
 import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
-export default function WorkflowView({ data, updateWorkflowEvent, allEvents, role }) {
+const BUDGET_VISIBLE_STATUSES = ["posted", "ad_live", "completed"];
+
+function BudgetInput({ currentValue, onSave }) {
+  const [val, setVal] = useState(currentValue ? String(currentValue) : "");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => { setVal(currentValue ? String(currentValue) : ""); }, [currentValue]);
+
+  const commit = () => {
+    const num = parseFloat(val) || 0;
+    if (num === (parseFloat(currentValue) || 0)) return;
+    onSave(num);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  return (
+    <div onClick={e => e.stopPropagation()} style={{
+      marginTop: 6, display: "flex", alignItems: "center", gap: 6,
+      background: "rgba(255,179,0,0.07)", border: "1px solid rgba(255,179,0,0.25)",
+      padding: "5px 8px", borderRadius: 8,
+    }}>
+      <span style={{ fontSize: 12 }}>💰</span>
+      <span style={{ fontSize: 11, color: "#92400e", fontWeight: 700 }}>₹</span>
+      <input
+        type="number"
+        inputMode="numeric"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === "Enter") { commit(); e.currentTarget.blur(); } }}
+        placeholder="Amount spent"
+        style={{
+          flex: 1, minWidth: 0, padding: "3px 6px", fontSize: 12,
+          background: "#fff", border: "1px solid #e5e5e0", borderRadius: 5,
+          color: "#1a1a1a", outline: "none",
+        }}
+      />
+      {saved && <span style={{ fontSize: 10, color: "#43A047", fontWeight: 700, whiteSpace: "nowrap" }}>Saved ✓</span>}
+    </div>
+  );
+}
+
+export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent, allEvents, role }) {
   const canMove = role === "admin" || role === "creative";
   const [filter, setFilter] = useState("upcoming");
   const [pageFilter, setPageFilter] = useState("All");
@@ -288,6 +331,20 @@ export default function WorkflowView({ data, updateWorkflowEvent, allEvents, rol
                           return <span key={a} style={{ background: at.bg, color: at.color }}>{at.icon} {at.label}</span>;
                         })}
                       </div>
+                      {BUDGET_VISIBLE_STATUSES.includes(task.status) && task.pageIds.length > 0 && canMove && (
+                        <BudgetInput
+                          currentValue={data.workflow[task.eventKey]?.[task.pageIds[0]]?.budget || 0}
+                          onSave={(num) => updateWorkflow(task.eventKey, task.pageIds[0], "budget", num)}
+                        />
+                      )}
+                      {BUDGET_VISIBLE_STATUSES.includes(task.status) && task.pageIds.length > 0 && !canMove && (() => {
+                        const b = data.workflow[task.eventKey]?.[task.pageIds[0]]?.budget || 0;
+                        return b > 0 ? (
+                          <div style={{ marginTop: 6, fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                            💰 ₹{b.toLocaleString("en-IN")}
+                          </div>
+                        ) : null;
+                      })()}
                       {task.event.actions.includes("ad") && task.event.adLeadDays && (
                         <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 9, color: "#d1d5db", background: "#f5f4f1", padding: "2px 6px", borderRadius: 4 }}>

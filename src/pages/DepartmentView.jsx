@@ -19,7 +19,7 @@ function normalizeStatus(s) {
 const noop = () => {};
 
 export default function DepartmentView() {
-  const { user, department, signOut } = useAuth();
+  const { user, department, teamMembers, signOut } = useAuth();
   const mob = useIsMobile();
   const [loggingOut, setLoggingOut] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -95,7 +95,7 @@ export default function DepartmentView() {
         {/* Welcome */}
         <div style={{ marginBottom: 18 }}>
           <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, margin: 0 }}>
-            Welcome, {displayName}
+            Welcome, {deptInfo.label}
           </h1>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, background: deptInfo.bg, color: deptInfo.color, textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -103,6 +103,12 @@ export default function DepartmentView() {
             </span>
             <span style={{ fontSize: 12, color: "#9ca3af" }}>{adRequests.length} request{adRequests.length === 1 ? "" : "s"}</span>
           </div>
+          {Array.isArray(teamMembers) && teamMembers.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 13, color: "#374151" }}>
+              <span style={{ color: "#9ca3af", fontWeight: 600 }}>Members: </span>
+              {teamMembers.join(", ")}
+            </div>
+          )}
         </div>
 
         {/* New request button */}

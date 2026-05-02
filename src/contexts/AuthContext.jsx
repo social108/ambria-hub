@@ -17,17 +17,19 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [department, setDepartment] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId) => {
     const { data } = await supabase
       .from("profiles")
-      .select("role, department")
+      .select("role, department, team_members")
       .eq("id", userId)
       .single();
     const dept = data?.department || null;
     setDepartment(dept);
     setRole(deriveRole(dept, data?.role));
+    setTeamMembers(Array.isArray(data?.team_members) ? data.team_members : []);
   }, []);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function AuthProvider({ children }) {
       } else {
         setRole(null);
         setDepartment(null);
+        setTeamMembers([]);
       }
     });
 
@@ -79,7 +82,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, role, department, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, role, department, teamMembers, loading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

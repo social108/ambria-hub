@@ -52,9 +52,9 @@ export default function DepartmentView() {
     setSubmitError("");
     if (!form.eventName.trim()) { setSubmitError("Campaign name is required"); return; }
     if (form.pages.length === 0) { setSubmitError("Select at least one page"); return; }
+    if (!form.requestedBy) { setSubmitError("Pick who is requesting this"); return; }
     await addAdRequest({
       ...form,
-      requestedBy: form.requestedBy || displayName,
       createdBy: user?.id,
       department,
     });
@@ -128,7 +128,29 @@ export default function DepartmentView() {
               <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({ ...f, eventName: v }))} placeholder="e.g. Summer Pool Party" />
               <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} type="date" />
               <InputField label="Ad End Date" value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} type="date" />
-              <InputField label="Requested By" value={form.requestedBy} onChange={v => setForm(f => ({ ...f, requestedBy: v }))} placeholder={displayName} />
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Requested By</div>
+                <select
+                  value={form.requestedBy}
+                  onChange={e => setForm(f => ({ ...f, requestedBy: e.target.value }))}
+                  style={{
+                    width: "100%", padding: "9px 12px", background: "#f5f4f1",
+                    border: "1px solid #e5e5e0", borderRadius: 10,
+                    color: "#1a1a1a", fontSize: 13, minHeight: 44,
+                    boxSizing: "border-box", cursor: "pointer",
+                  }}
+                >
+                  <option value="">Select who is requesting</option>
+                  {(teamMembers || []).map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                {(!teamMembers || teamMembers.length === 0) && (
+                  <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                    No team members on file — ask admin to add them.
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>

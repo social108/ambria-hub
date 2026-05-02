@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PAGES, AD_REQUEST_STATUS, DEPARTMENTS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
 import { supabase } from "../supabaseClient.js";
@@ -37,7 +37,22 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
   const [rejectTarget, setRejectTarget] = useState(null); // { id, eventName }
   const [rejectReason, setRejectReason] = useState("");
   const [approvingId, setApprovingId] = useState(null);
+  const [rosters, setRosters] = useState([]); // [{ id, department, team_members }]
   const mob = useIsMobile();
+
+  // Fetch every department's roster once so the Requested By dropdown can list
+  // names grouped by department.
+  useEffect(() => {
+    let active = true;
+    supabase.from("profiles").select("id, department, team_members").then(({ data: rows, error }) => {
+      if (!active) return;
+      if (error) { console.error("rosters fetch error:", error); return; }
+      const filtered = (rows || [])
+        .filter(r => r.department && Array.isArray(r.team_members) && r.team_members.length > 0);
+      setRosters(filtered);
+    });
+    return () => { active = false; };
+  }, []);
 
   const filteredAds = useMemo(() => {
     if (statusFilter === "All") return data.adRequests;
@@ -148,7 +163,37 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
             <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
             <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({...f, startDate: v}))} type="date" />
             <InputField label="Ad End Date" value={form.endDate} onChange={v => setForm(f => ({...f, endDate: v}))} type="date" />
-            <InputField label="Requested By" value={form.requestedBy} onChange={v => setForm(f => ({...f, requestedBy: v}))} placeholder="e.g. Venue Manager name" />
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Requested By</div>
+              <select
+                value={form.requestedBy}
+                onChange={e => setForm(f => ({ ...f, requestedBy: e.target.value }))}
+                style={{
+                  width: "100%", padding: "9px 12px", background: "#f5f4f1",
+                  border: "1px solid #e5e5e0", borderRadius: 10,
+                  color: "#1a1a1a", fontSize: 13, minHeight: 44,
+                  boxSizing: "border-box", cursor: "pointer",
+                }}
+              >
+                <option value="">Select who is requesting</option>
+                {rosters.map(profile => {
+                  const deptInfo = DEPARTMENTS[profile.department];
+                  const label = deptInfo ? deptInfo.label : (profile.department.charAt(0).toUpperCase() + profile.department.slice(1) + " Team");
+                  return (
+                    <optgroup key={profile.id} label={label}>
+                      {profile.team_members.map(name => (
+                        <option key={`${profile.id}-${name}`} value={name}>{name}</option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+              </select>
+              {rosters.length === 0 && (
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
+                  No team rosters yet — add members on the Team page.
+                </div>
+              )}
+            </div>
           </div>
           <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(255,179,0,0.08)", border: "1px solid rgba(255,179,0,0.2)", borderRadius: 8, fontSize: 11, color: "#92400e" }}>
             💡 Budget is entered later, on the workflow board, once the ad is posted/live.

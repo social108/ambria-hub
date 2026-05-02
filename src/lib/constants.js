@@ -31,12 +31,9 @@ export const WORKFLOW_STATUS = {
 };
 
 export const AD_REQUEST_STATUS = {
-  requested: { label: "Requested", color: "#FFB300", bg: "rgba(255,179,0,0.12)" },
-  creative_wip: { label: "Creative WIP", color: "#42A5F5", bg: "rgba(66,165,245,0.12)" },
-  approved: { label: "Approved", color: "#66BB6A", bg: "rgba(102,187,106,0.12)" },
-  live: { label: "Ad Live", color: "#E65100", bg: "rgba(230,81,0,0.12)" },
-  completed: { label: "Completed", color: "#7E57C2", bg: "rgba(126,87,194,0.12)" },
-  rejected: { label: "Rejected", color: "#EF5350", bg: "rgba(239,83,80,0.12)" },
+  pending: { label: "Pending Review", color: "#f59e0b", bg: "#fefce8" },
+  approved: { label: "Approved", color: "#16a34a", bg: "#dcfce7" },
+  rejected: { label: "Rejected", color: "#dc2626", bg: "#fef2f2" },
 };
 
 export const KANBAN_COLUMNS = [

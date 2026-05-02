@@ -23,21 +23,34 @@ function getRequestSpent(req, workflowData) {
   return total;
 }
 
-export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
+// Map legacy statuses (creative_wip, live, completed, requested) onto the
+// new pending/approved/rejected model so old rows still render correctly.
+function normalizeStatus(s) {
+  if (s === "rejected") return "rejected";
+  if (s === "pending" || s === "requested" || !s) return "pending";
+  return "approved"; // creative_wip, approved, live, completed
+}
+
+export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, addEvent, updateWorkflowEvent, role }) {
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
-  const canChangeStatus = role === "admin" || role === "creative";
+  const canDecide = role === "admin" || role === "creative";
   const canDelete = role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
   const [statusFilter, setStatusFilter] = useState("All");
+  const [rejectTarget, setRejectTarget] = useState(null); // { id, eventName }
+  const [rejectReason, setRejectReason] = useState("");
   const mob = useIsMobile();
 
-  const filteredAds = statusFilter === "All" ? data.adRequests : data.adRequests.filter(a => a.status === statusFilter);
+  const filteredAds = useMemo(() => {
+    if (statusFilter === "All") return data.adRequests;
+    return data.adRequests.filter(a => normalizeStatus(a.status) === statusFilter);
+  }, [data.adRequests, statusFilter]);
 
-  // Total spent across all approved/live/completed ad requests (from workflow_status budgets)
+  // Total spent across approved ad requests (from workflow_status budgets)
   const totalSpent = useMemo(() => {
     return data.adRequests
-      .filter(a => ["approved", "live", "completed"].includes(a.status))
+      .filter(a => normalizeStatus(a.status) === "approved")
       .reduce((s, a) => s + getRequestSpent(a, workflowData), 0);
   }, [data.adRequests, workflowData]);
 
@@ -50,6 +63,39 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
 
   const togglePage = (pid) => {
     setForm(f => ({ ...f, pages: f.pages.includes(pid) ? f.pages.filter(p => p !== pid) : [...f.pages, pid] }));
+  };
+
+  const handleApprove = async (req) => {
+    await updateAdRequest(req.id, { status: "approved", rejectReason: "" });
+    // Create a custom event so the workflow board renders kanban cards for this request
+    const eventDate = req.startDate || req.endDate || new Date().toISOString().split("T")[0];
+    await addEvent({
+      name: req.eventName,
+      date: eventDate,
+      cat: "Business",
+      actions: ["ad"],
+      pages: req.pages || [],
+      priority: 2,
+      adLeadDays: 0,
+      note: req.brief || "",
+    });
+    // Seed pending workflow_status rows for each page
+    if ((req.pages || []).length > 0) {
+      const eventKey = `${eventDate}-${req.eventName}`;
+      await updateWorkflowEvent(eventKey, req.pages, "pending");
+    }
+  };
+
+  const openRejectModal = (req) => {
+    setRejectTarget({ id: req.id, eventName: req.eventName });
+    setRejectReason("");
+  };
+
+  const submitReject = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    await updateAdRequest(rejectTarget.id, { status: "rejected", rejectReason: rejectReason.trim() });
+    setRejectTarget(null);
+    setRejectReason("");
   };
 
   return (
@@ -153,8 +199,9 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
       {/* Requests List */}
       {filteredAds.length === 0 && <EmptyState msg="No ad requests yet. Click '+ New Ad Request' to create one." />}
       {[...filteredAds].reverse().map(req => {
-        const stInfo = AD_REQUEST_STATUS[req.status] || AD_REQUEST_STATUS.requested;
-        const showSpent = ["approved", "live", "completed"].includes(req.status);
+        const norm = normalizeStatus(req.status);
+        const stInfo = AD_REQUEST_STATUS[norm];
+        const showSpent = norm === "approved";
         const spent = showSpent ? getRequestSpent(req, workflowData) : 0;
         return (
           <div key={req.id} style={{
@@ -166,19 +213,6 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                   <span style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
-                  {canChangeStatus ? (
-                    <select
-                      value={req.status}
-                      onChange={(e) => updateAdRequest(req.id, { status: e.target.value })}
-                      style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", cursor: "pointer", fontWeight: 700, minHeight: mob ? 36 : "auto" }}
-                    >
-                      {Object.entries(AD_REQUEST_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                  ) : (
-                    <span style={{ fontSize: mob ? 11 : 10, background: stInfo.bg, color: stInfo.color, border: `1px solid ${stInfo.color}30`, borderRadius: 5, padding: mob ? "4px 10px" : "2px 8px", fontWeight: 700 }}>
-                      {stInfo.label}
-                    </span>
-                  )}
                 </div>
                 <div style={{ display: "flex", gap: mob ? 6 : 12, flexWrap: "wrap", fontSize: mob ? 11 : 12, color: "#6b7280", marginBottom: 8 }}>
                   {showSpent && (
@@ -198,13 +232,105 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
                     return pg ? <span key={pid} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: `${pg.color}18`, color: pg.color, fontWeight: 600 }}>{pg.name}</span> : null;
                   })}
                 </div>
-                {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
+                {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8, marginBottom: 10 }}>{req.brief}</div>}
+
+                {/* Action area — buttons for pending, badge for approved/rejected */}
+                {norm === "pending" && (
+                  canDecide ? (
+                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                      <button onClick={() => handleApprove(req)} style={{
+                        padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer",
+                        background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: 13,
+                        ...(mob ? { flex: 1 } : {}),
+                      }}>✅ Approve</button>
+                      <button onClick={() => openRejectModal(req)} style={{
+                        padding: "8px 20px", borderRadius: 8, border: "1px solid #ef4444", cursor: "pointer",
+                        background: "transparent", color: "#ef4444", fontWeight: 600, fontSize: 13,
+                        ...(mob ? { flex: 1 } : {}),
+                      }}>❌ Reject</button>
+                    </div>
+                  ) : (
+                    <span style={{ padding: "4px 12px", borderRadius: 8, background: stInfo.bg, color: stInfo.color, fontWeight: 700, fontSize: 12 }}>
+                      ⏳ {stInfo.label}
+                    </span>
+                  )
+                )}
+
+                {norm === "approved" && (
+                  <span style={{ padding: "4px 12px", borderRadius: 8, background: "#dcfce7", color: "#16a34a", fontWeight: 700, fontSize: 12 }}>
+                    ✅ Approved · Sent to Workflow
+                  </span>
+                )}
+
+                {norm === "rejected" && (
+                  <div>
+                    <span style={{ padding: "4px 12px", borderRadius: 8, background: "#fef2f2", color: "#dc2626", fontWeight: 700, fontSize: 12 }}>
+                      ❌ Rejected
+                    </span>
+                    {req.rejectReason && (
+                      <div style={{ marginTop: 6, fontSize: 12, color: "#dc2626", fontStyle: "italic" }}>
+                        Reason: "{req.rejectReason}"
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {canDelete && <button onClick={() => { if(confirm("Delete this ad request?")) deleteAdRequest(req.id); }} style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.2)", borderRadius: 6, padding: "4px 10px", color: "#EF5350", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>✕</button>}
             </div>
           </div>
         );
       })}
+
+      {/* REJECT REASON MODAL */}
+      {rejectTarget && (
+        <div
+          onClick={() => setRejectTarget(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 2000,
+            background: "rgba(0,0,0,0.25)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 16, width: "100%", maxWidth: 440,
+              padding: mob ? 20 : 28, boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
+            }}
+          >
+            <h3 style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 18, margin: "0 0 6px" }}>Reject "{rejectTarget.eventName}"</h3>
+            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#9ca3af" }}>The requester will see this reason on the card.</p>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="Reason for rejection (required)…"
+              rows={4}
+              autoFocus
+              style={{
+                width: "100%", padding: "10px 12px", background: "#f5f4f1",
+                border: "1px solid #e5e5e0", borderRadius: 10,
+                color: "#1a1a1a", fontSize: 13, resize: "vertical", minHeight: 90,
+              }}
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 14, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setRejectTarget(null)}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "1px solid #e5e5e0", background: "#f5f4f1", color: "#6b7280", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >Cancel</button>
+              <button
+                onClick={submitReject}
+                disabled={!rejectReason.trim()}
+                style={{
+                  padding: "9px 22px", borderRadius: 8, border: "none",
+                  background: rejectReason.trim() ? "#dc2626" : "#fca5a5",
+                  color: "#fff", fontSize: 13, fontWeight: 700,
+                  cursor: rejectReason.trim() ? "pointer" : "default",
+                }}
+              >Reject Request</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -36,7 +36,8 @@ export default function useAdRequests({ onSyncError } = {}) {
       endDate: row.end_date,
       brief: row.brief,
       requestedBy: row.requested_by,
-      status: row.status || "requested",
+      status: row.status || "pending",
+      rejectReason: row.reject_reason || "",
       createdAt: row.created_at,
     })));
     setLoading(false);
@@ -58,7 +59,7 @@ export default function useAdRequests({ onSyncError } = {}) {
       end_date: req.endDate || null,
       brief: req.brief || "",
       requested_by: req.requestedBy || "",
-      status: "requested",
+      status: "pending",
     };
     const { error } = await supabase.from("ad_requests").insert(row);
     if (error) { console.error("addAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
@@ -71,7 +72,8 @@ export default function useAdRequests({ onSyncError } = {}) {
       endDate: req.endDate,
       brief: req.brief || "",
       requestedBy: req.requestedBy || "",
-      status: "requested",
+      status: "pending",
+      rejectReason: "",
       createdAt: new Date().toISOString(),
     }]);
   }, [onSyncError]);
@@ -86,6 +88,7 @@ export default function useAdRequests({ onSyncError } = {}) {
     if (updates.brief !== undefined) row.brief = updates.brief;
     if (updates.requestedBy !== undefined) row.requested_by = updates.requestedBy;
     if (updates.pages !== undefined) row.pages = updates.pages;
+    if (updates.rejectReason !== undefined) row.reject_reason = updates.rejectReason || null;
     const { error } = await supabase.from("ad_requests").update(row).eq("id", id);
     if (error) { console.error("updateAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setAdRequests(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));

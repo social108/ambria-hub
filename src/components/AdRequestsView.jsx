@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext.jsx";
 import Chip from "./shared/Chip.jsx";
 import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
+import AdWorkflowProgress from "./shared/AdWorkflowProgress.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
 // Total budget spent for an ad request, summed across its per-page workflow cards.
@@ -329,9 +330,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
                 )}
 
                 {norm === "approved" && (
-                  <span style={{ padding: "4px 12px", borderRadius: 8, background: "#dcfce7", color: "#16a34a", fontWeight: 700, fontSize: 12 }}>
-                    ✅ Approved · Sent to Workflow
-                  </span>
+                  <AdWorkflowProgress adRequestId={req.id} workflowData={workflowData} />
                 )}
 
                 {norm === "rejected" && (

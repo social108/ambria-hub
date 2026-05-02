@@ -1,13 +1,15 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { PAGES, AD_REQUEST_STATUS, DEPARTMENTS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
+import { supabase } from "../supabaseClient.js";
 import useAdRequests from "../hooks/useAdRequests.js";
 import useRealtimeSync from "../hooks/useRealtimeSync.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 import Chip from "../components/shared/Chip.jsx";
 import InputField from "../components/shared/InputField.jsx";
 import EmptyState from "../components/shared/EmptyState.jsx";
+import AdWorkflowProgress from "../components/shared/AdWorkflowProgress.jsx";
 import logo from "../assets/logo.png";
 
 function normalizeStatus(s) {
@@ -28,8 +30,38 @@ export default function DepartmentView() {
   const [submitError, setSubmitError] = useState("");
 
   const { adRequests, addAdRequest, loading, refetch } = useAdRequests({ ownerId: user?.id });
+
+  // Workflow progress for this user's approved ad requests only.
+  const [adWorkflow, setAdWorkflow] = useState({});
+  const approvedKeys = useMemo(
+    () => adRequests.filter(r => r.status === "approved").map(r => `ad-${r.id}`),
+    [adRequests]
+  );
+  const approvedKeysJson = JSON.stringify(approvedKeys);
+  const fetchAdWorkflow = useCallback(async () => {
+    if (approvedKeys.length === 0) { setAdWorkflow({}); return; }
+    const { data, error } = await supabase
+      .from("workflow_status")
+      .select("event_key, page_id, status, budget")
+      .in("event_key", approvedKeys);
+    if (error) { console.error("ad workflow fetch error:", error); return; }
+    const nested = {};
+    (data || []).forEach(row => {
+      if (!nested[row.event_key]) nested[row.event_key] = {};
+      nested[row.event_key][row.page_id] = {
+        status: row.status,
+        budget: parseFloat(row.budget) || 0,
+      };
+    });
+    setAdWorkflow(nested);
+  // approvedKeysJson captures content changes so eslint deps stay clean
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvedKeysJson]);
+
+  useEffect(() => { fetchAdWorkflow(); }, [fetchAdWorkflow]);
+
   const refetchAds = useCallback(() => refetch(), [refetch]);
-  useRealtimeSync({ refetchEvents: noop, refetchWorkflow: noop, refetchAdRequests: refetchAds });
+  useRealtimeSync({ refetchEvents: noop, refetchWorkflow: fetchAdWorkflow, refetchAdRequests: refetchAds });
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
   const deptInfo = DEPARTMENTS[department] || { label: department || "Unassigned", color: "#6b7280", bg: "#f3f2ef" };
@@ -237,9 +269,6 @@ export default function DepartmentView() {
                 {norm === "pending" && (
                   <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: stInfo.bg, color: stInfo.color }}>⏳ Pending Review</span>
                 )}
-                {norm === "approved" && (
-                  <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#dcfce7", color: "#16a34a" }}>✅ Approved · Sent to Workflow</span>
-                )}
                 {norm === "rejected" && (
                   <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#fef2f2", color: "#dc2626" }}>❌ Rejected</span>
                 )}
@@ -255,6 +284,9 @@ export default function DepartmentView() {
                 })}
               </div>
               {req.brief && <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, background: "#f5f4f1", padding: "8px 12px", borderRadius: 8 }}>{req.brief}</div>}
+              {norm === "approved" && (
+                <AdWorkflowProgress adRequestId={req.id} workflowData={adWorkflow} />
+              )}
               {norm === "rejected" && req.rejectReason && (
                 <div style={{ marginTop: 8, fontSize: 12, color: "#dc2626", fontStyle: "italic" }}>
                   Reason: "{req.rejectReason}"

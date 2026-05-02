@@ -54,6 +54,23 @@ export function isEventFullyDone(event, workflowData) {
   return shouldHideReminder("event_day", event, workflowData);
 }
 
+// Per-page workflow progress for an approved ad request. Looks up rows under
+// event_key = `ad-${reqId}` and bins them by status.
+export function getAdWorkflowSummary(adRequestId, workflowData) {
+  const eventKey = `ad-${adRequestId}`;
+  const pageStatuses = workflowData?.[eventKey] || {};
+  const counts = { pending: 0, creative_wip: 0, ready: 0, posted: 0, ad_live: 0, completed: 0, skipped: 0 };
+  let total = 0;
+  Object.values(pageStatuses).forEach(({ status }) => {
+    if (status && counts[status] !== undefined) counts[status]++;
+    else counts.pending++;
+    total++;
+  });
+  const done = counts.posted + counts.ad_live + counts.completed + counts.skipped;
+  const inProgress = counts.creative_wip + counts.ready;
+  return { counts, total, done, inProgress };
+}
+
 export function loadData(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }

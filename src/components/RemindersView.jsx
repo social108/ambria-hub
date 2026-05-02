@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { PAGES, REMINDER_TYPES, ACTION_TYPES, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
-import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryReminder } from "../lib/helpers.js";
+import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryReminder, shouldHideReminder } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import FieldLabel from "./shared/FieldLabel.jsx";
@@ -8,7 +8,7 @@ import useIsMobile from "../hooks/useIsMobile.js";
 
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
 
-export default function RemindersView({ allEvents, data, updateEvent, deleteEvent, resetBuiltin, setTab, role }) {
+export default function RemindersView({ allEvents, data, workflowData, updateEvent, deleteEvent, resetBuiltin, setTab, role }) {
   const canEdit = role === "admin" || role === "creative";
   const canDelete = role === "admin";
   const [filter, setFilter] = useState("all_upcoming");
@@ -21,6 +21,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
   const reminders = useMemo(() => {
     const list = [];
     const today = new Date(); today.setHours(0,0,0,0);
+    const wf = workflowData || {};
 
     allEvents.forEach(evt => {
       const eventDays = daysUntil(evt.date);
@@ -29,7 +30,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
       const hasAd = (evt.actions || []).includes("ad");
       const adLead = evt.adLeadDays || 15;
 
-      if ((evt.actions || []).includes("story") || true) {
+      if (((evt.actions || []).includes("story") || true) && !shouldHideReminder("story_reminder", evt, wf)) {
         const rDate = getStoryReminder(evt.date);
         const rDays = daysUntil(rDate);
         list.push({
@@ -38,7 +39,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
         });
       }
 
-      if (hasAd) {
+      if (hasAd && !shouldHideReminder("creative_deadline", evt, wf)) {
         const cDate = getCreativeDeadline(evt.date, adLead);
         const cDays = daysUntil(cDate);
         list.push({
@@ -47,7 +48,7 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
         });
       }
 
-      if (hasAd) {
+      if (hasAd && !shouldHideReminder("ad_start", evt, wf)) {
         const aDate = getAdStartDate(evt.date, adLead);
         const aDays = daysUntil(aDate);
         list.push({
@@ -56,15 +57,17 @@ export default function RemindersView({ allEvents, data, updateEvent, deleteEven
         });
       }
 
-      list.push({
-        type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
-        message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
-      });
+      if (!shouldHideReminder("event_day", evt, wf)) {
+        list.push({
+          type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
+          message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
+        });
+      }
     });
 
     list.sort((a, b) => a.date.localeCompare(b.date));
     return list;
-  }, [allEvents]);
+  }, [allEvents, workflowData]);
 
   const filtered = useMemo(() => {
     return reminders.filter(r => {

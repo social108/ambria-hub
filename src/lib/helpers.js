@@ -33,6 +33,27 @@ export function getStoryReminder(dateStr) {
 
 export function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
 
+const HIDE_STATUSES = {
+  story_reminder: ["posted", "completed", "done", "skipped"],
+  creative_deadline: ["creative_wip", "ready", "posted", "ad_live", "completed", "done", "skipped"],
+  ad_start: ["ad_live", "completed", "done", "skipped"],
+  event_day: ["completed", "done", "skipped"],
+};
+
+export function shouldHideReminder(reminderType, event, workflowData) {
+  const pages = event.pages || [];
+  if (pages.length === 0) return false;
+  const hideList = HIDE_STATUSES[reminderType];
+  if (!hideList) return false;
+  const eventKey = `${event.date}-${event.name}`;
+  const evtWf = workflowData?.[eventKey] || {};
+  return pages.every(pid => hideList.includes(evtWf[pid]?.status));
+}
+
+export function isEventFullyDone(event, workflowData) {
+  return shouldHideReminder("event_day", event, workflowData);
+}
+
 export function loadData(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }

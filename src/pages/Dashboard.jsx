@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { supabase } from "../supabaseClient.js";
-import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder } from "../lib/helpers.js";
+import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder, isEventFullyDone, shouldHideReminder } from "../lib/helpers.js";
 import useEvents from "../hooks/useEvents.js";
 import useWorkflow from "../hooks/useWorkflow.js";
 import useAdRequests from "../hooks/useAdRequests.js";
@@ -112,22 +112,27 @@ export default function Dashboard() {
     return allEvents.filter(e => {
       const d = daysUntil(e.date);
       if (d < 0) return false;
+      if (isEventFullyDone(e, workflowData)) return false;
       const hasAd = (e.actions || []).includes("ad");
       const adLead = e.adLeadDays || 15;
       const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
       const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
       const storyDays = daysUntil(getStoryReminder(e.date));
-      return (d >= 0 && d <= 7) || (hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5) || (hasAd && adStartDays >= -2 && adStartDays <= 3) || (storyDays >= -1 && storyDays <= 3);
+      const eventDayActive = (d >= 0 && d <= 7) && !shouldHideReminder("event_day", e, workflowData);
+      const creativeActive = hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5 && !shouldHideReminder("creative_deadline", e, workflowData);
+      const adStartActive = hasAd && adStartDays >= -2 && adStartDays <= 3 && !shouldHideReminder("ad_start", e, workflowData);
+      const storyActive = storyDays >= -1 && storyDays <= 3 && !shouldHideReminder("story_reminder", e, workflowData);
+      return eventDayActive || creativeActive || adStartActive || storyActive;
     }).length;
-  }, [allEvents]);
+  }, [allEvents, workflowData]);
 
   const navTabs = useMemo(() => {
     const tabs = [
       { id: "reminders", icon: "🔔", label: "Reminders" },
-      { id: "calendar", icon: "◎", label: "Calendar" },
-      { id: "workflow", icon: "✦", label: "Workflow" },
-      { id: "ads", icon: "▲", label: "Ad Requests" },
-      { id: "pages", icon: "◆", label: "Pages" },
+      { id: "calendar", icon: "📅", label: "Calendar" },
+      { id: "workflow", icon: "📋", label: "Workflow" },
+      { id: "ads", icon: "💰", label: "Ad Requests" },
+      { id: "pages", icon: "📱", label: "Pages" },
     ];
     if (role === "admin") tabs.push({ id: "team", icon: "👥", label: "Team" });
     return tabs;
@@ -453,7 +458,7 @@ export default function Dashboard() {
 
       {/* CONTENT */}
       <div style={{ padding: mob ? "12px 10px" : "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
-        {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} role={role} />}
+        {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} workflowData={workflowData} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} role={role} />}
         {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} role={role} />}
         {tab === "workflow" && <WorkflowView data={data} updateWorkflowEvent={updateWorkflowEvent} allEvents={allEvents} role={role} />}
         {tab === "ads" && <AdRequestsView data={data} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} role={role} />}

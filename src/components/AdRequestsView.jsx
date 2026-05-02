@@ -26,7 +26,7 @@ function normalizeStatus(s) {
   return "approved"; // creative_wip, approved, live, completed
 }
 
-export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
+export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, refetchWorkflow, role }) {
   const { user, department } = useAuth();
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
   const canDecide = role === "admin" || role === "creative";
@@ -94,8 +94,14 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
         const { error } = await supabase
           .from("workflow_status")
           .upsert(rows, { onConflict: "event_key,page_id", ignoreDuplicates: true });
-        if (error) console.error("handleApprove workflow upsert error:", error);
+        if (error) {
+          console.error("handleApprove workflow upsert error:", error);
+          alert("Approved, but failed to create workflow cards: " + error.message);
+        }
       }
+      // Force a refresh of workflowData so the new ad-cards show on the
+      // workflow board even if Supabase Realtime is disabled for this project.
+      if (refetchWorkflow) await refetchWorkflow();
     } finally {
       setApprovingId(null);
     }

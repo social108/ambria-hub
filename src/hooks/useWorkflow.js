@@ -64,14 +64,20 @@ export default function useWorkflow({ onSyncError } = {}) {
 
   // Update status for ALL pages of an event at once
   const updateWorkflowEvent = useCallback(async (eventKey, pageIds, status) => {
-    // Optimistic local update
+    // Optimistic local update — preserve any existing fields (e.g. budget)
+    // on each page; only swap in the new status.
     setWorkflowData(prev => {
       const wf = { ...prev };
-      if (!wf[eventKey]) wf[eventKey] = {};
-      pageIds.forEach(pid => { wf[eventKey][pid] = { status }; });
+      if (!wf[eventKey]) wf[eventKey] = { ...(prev[eventKey] || {}) };
+      else wf[eventKey] = { ...wf[eventKey] };
+      pageIds.forEach(pid => {
+        wf[eventKey][pid] = { ...(wf[eventKey][pid] || {}), status };
+      });
       return wf;
     });
 
+    // Server-side: payload only contains status, so on conflict the existing
+    // budget column is preserved (PostgREST UPDATE only sets columns from EXCLUDED).
     const rows = pageIds.map(pid => ({ event_key: eventKey, page_id: pid, status }));
     const { error } = await supabase.from("workflow_status").upsert(rows, { onConflict: "event_key,page_id" });
     if (error) { console.error("updateWorkflowEvent error:", error); onSyncError?.("Sync error — retrying..."); }

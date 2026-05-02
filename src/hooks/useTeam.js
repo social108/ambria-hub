@@ -12,7 +12,7 @@ export default function useTeam() {
     try {
       const { data, error: err } = await supabase
         .from("profiles")
-        .select("id, role, full_name, email, status, last_sign_in, created_at")
+        .select("id, role, department, full_name, email, status, last_sign_in, created_at")
         .order("created_at", { ascending: true });
       if (err) throw err;
       setMembers(data || []);
@@ -34,6 +34,15 @@ export default function useTeam() {
     await fetchMembers();
   }, [fetchMembers]);
 
+  const updateMemberDepartment = useCallback(async (userId, newDept) => {
+    const { error: err } = await supabase
+      .from("profiles")
+      .update({ department: newDept })
+      .eq("id", userId);
+    if (err) throw err;
+    await fetchMembers();
+  }, [fetchMembers]);
+
   const deleteMember = useCallback(async (userId) => {
     const { error: err } = await supabase
       .from("profiles")
@@ -43,5 +52,5 @@ export default function useTeam() {
     await fetchMembers();
   }, [fetchMembers]);
 
-  return { members, loading, error, fetchMembers, updateMemberRole, deleteMember };
+  return { members, loading, error, fetchMembers, updateMemberRole, updateMemberDepartment, deleteMember };
 }

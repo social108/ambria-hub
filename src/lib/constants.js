@@ -62,6 +62,19 @@ export const TEAM_ROLES = {
   viewer: { label: "Viewer", color: "#6b7280", bg: "#f3f2ef", desc: "View-only access to all pages" },
 };
 
+// Departments are the new source-of-truth for access control. Roles are derived from these.
+// admin/creative get the full app; the rest see only the simplified Ad Requests view.
+export const DEPARTMENTS = {
+  admin:         { label: "Admin",              shortLabel: "Admin",         color: "#1a1a1a", bg: "#f3f2ef", fullAccess: true },
+  creative:      { label: "Creative (SMO)",     shortLabel: "Creative",      color: "#2563eb", bg: "#dbeafe", fullAccess: true },
+  venue:         { label: "Venue Team",         shortLabel: "Venue",         color: "#ea580c", bg: "#ffedd5", fullAccess: false },
+  catering:      { label: "Catering Team",      shortLabel: "Catering",      color: "#0891b2", bg: "#cffafe", fullAccess: false },
+  decor:         { label: "Decor Team",         shortLabel: "Decor",         color: "#db2777", bg: "#fce7f3", fullAccess: false },
+  entertainment: { label: "Entertainment Team", shortLabel: "Entertainment", color: "#7c3aed", bg: "#ede9fe", fullAccess: false },
+};
+
+export const DEPARTMENT_OPTIONS = ["admin", "creative", "venue", "catering", "decor", "entertainment"];
+
 export const EMPTY_FORM = { name: "", date: "", cat: "Seasonal", actions: [], pages: [], priority: 2, adLeadDays: 15, note: "" };
 
 export const STORAGE_KEYS = {

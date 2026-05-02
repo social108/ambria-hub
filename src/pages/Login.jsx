@@ -22,7 +22,7 @@ export default function Login() {
     try {
       if (mode === "signup") {
         await signUp(email, password, fullName);
-        setSuccess("Account created! You can now sign in.");
+        setSuccess("Account created! Sign in — your admin will assign your department.");
         setMode("signin");
       } else {
         await signIn(email, password);

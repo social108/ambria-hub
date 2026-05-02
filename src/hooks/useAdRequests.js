@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient.js";
 
-export default function useAdRequests({ onSyncError } = {}) {
+export default function useAdRequests({ onSyncError, ownerId } = {}) {
   const [adRequests, setAdRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const retryCount = useRef(0);
   const retryTimer = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("ad_requests")
-      .select("*")
-      .order("created_at", { ascending: true });
+    let q = supabase.from("ad_requests").select("*").order("created_at", { ascending: true });
+    if (ownerId) q = q.eq("created_by", ownerId);
+    const { data, error } = await q;
     if (error) {
       console.error("useAdRequests fetch error:", error);
       if (retryCount.current < 3) {
@@ -38,10 +37,12 @@ export default function useAdRequests({ onSyncError } = {}) {
       requestedBy: row.requested_by,
       status: row.status || "pending",
       rejectReason: row.reject_reason || "",
+      department: row.department || "",
+      createdBy: row.created_by || null,
       createdAt: row.created_at,
     })));
     setLoading(false);
-  }, [onSyncError]);
+  }, [onSyncError, ownerId]);
 
   useEffect(() => {
     fetchData();
@@ -60,6 +61,8 @@ export default function useAdRequests({ onSyncError } = {}) {
       brief: req.brief || "",
       requested_by: req.requestedBy || "",
       status: "pending",
+      created_by: req.createdBy || null,
+      department: req.department || "",
     };
     const { error } = await supabase.from("ad_requests").insert(row);
     if (error) { console.error("addAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
@@ -74,6 +77,8 @@ export default function useAdRequests({ onSyncError } = {}) {
       requestedBy: req.requestedBy || "",
       status: "pending",
       rejectReason: "",
+      department: req.department || "",
+      createdBy: req.createdBy || null,
       createdAt: new Date().toISOString(),
     }]);
   }, [onSyncError]);

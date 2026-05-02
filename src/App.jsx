@@ -1,9 +1,11 @@
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import DepartmentView from "./pages/DepartmentView.jsx";
+import WaitingScreen from "./pages/WaitingScreen.jsx";
 
 function AppContent() {
-  const { session, loading } = useAuth();
+  const { session, loading, department } = useAuth();
 
   if (loading) return (
     <div style={{
@@ -15,7 +17,10 @@ function AppContent() {
     </div>
   );
 
-  return session ? <Dashboard /> : <Login />;
+  if (!session) return <Login />;
+  if (!department) return <WaitingScreen />;
+  if (department === "admin" || department === "creative") return <Dashboard />;
+  return <DepartmentView />;
 }
 
 export default function App() {

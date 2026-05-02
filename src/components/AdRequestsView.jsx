@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
-import { PAGES, AD_REQUEST_STATUS } from "../lib/constants.js";
+import { PAGES, AD_REQUEST_STATUS, DEPARTMENTS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
 import { supabase } from "../supabaseClient.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import Chip from "./shared/Chip.jsx";
 import InputField from "./shared/InputField.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
@@ -26,6 +27,7 @@ function normalizeStatus(s) {
 }
 
 export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, role }) {
+  const { user, department } = useAuth();
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
   const canDecide = role === "admin" || role === "creative";
   const canDelete = role === "admin";
@@ -51,7 +53,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
 
   const handleSubmit = () => {
     if (!form.eventName || form.pages.length === 0) return;
-    addAdRequest(form);
+    addAdRequest({ ...form, createdBy: user?.id, department });
     setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
     setShowForm(false);
   };
@@ -211,6 +213,15 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                   <span style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 15, fontWeight: 700, color: "#1a1a1a" }}>{req.eventName}</span>
+                  {req.department && DEPARTMENTS[req.department] && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 5,
+                      background: DEPARTMENTS[req.department].bg, color: DEPARTMENTS[req.department].color,
+                      textTransform: "uppercase", letterSpacing: 0.4,
+                    }}>
+                      {DEPARTMENTS[req.department].shortLabel}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: mob ? 6 : 12, flexWrap: "wrap", fontSize: mob ? 11 : 12, color: "#6b7280", marginBottom: 8 }}>
                   {showSpent && (

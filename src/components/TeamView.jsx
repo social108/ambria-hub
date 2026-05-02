@@ -2,37 +2,26 @@ import { useState } from "react";
 import useTeam from "../hooks/useTeam.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { DEPARTMENTS, DEPARTMENT_OPTIONS } from "../lib/constants.js";
 import EmptyState from "./shared/EmptyState.jsx";
 
-const ROLE_BADGES = {
-  admin: { label: "Admin", bg: "#1a1a1a", color: "#fff" },
-  creative: { label: "Creative", bg: "#3b82f6", color: "#fff" },
-  venue_manager: { label: "Venue Manager", bg: "#22c55e", color: "#fff" },
-  viewer: { label: "Viewer", bg: "#9ca3af", color: "#fff" },
-};
-
-const ROLE_OPTIONS = [
-  { id: "admin", label: "Admin" },
-  { id: "creative", label: "Creative Team" },
-  { id: "venue_manager", label: "Venue Manager" },
-  { id: "viewer", label: "Viewer" },
-];
+const UNASSIGNED = { label: "Unassigned", color: "#9ca3af", bg: "#f3f2ef" };
 
 export default function TeamView() {
   const { user } = useAuth();
-  const { members, loading, error, updateMemberRole, deleteMember } = useTeam();
+  const { members, loading, error, updateMemberDepartment, deleteMember } = useTeam();
   const mob = useIsMobile();
-  const [savedId, setSavedId] = useState(null); // flash "Saved" indicator
-  const [removedNote, setRemovedNote] = useState(null); // auth note after removal
+  const [savedId, setSavedId] = useState(null);
+  const [removedNote, setRemovedNote] = useState(null);
 
-  const handleRoleChange = async (memberId, newRole) => {
+  const handleDepartmentChange = async (memberId, newDept) => {
     setSavedId(null);
     try {
-      await updateMemberRole(memberId, newRole);
+      await updateMemberDepartment(memberId, newDept || null);
       setSavedId(memberId);
       setTimeout(() => setSavedId(null), 1500);
     } catch (e) {
-      alert("Failed to update role: " + e.message);
+      alert("Failed to update department: " + e.message);
     }
   };
 
@@ -64,7 +53,7 @@ export default function TeamView() {
           Team Members
         </h2>
         <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9ca3af" }}>
-          {members.length} member{members.length !== 1 ? "s" : ""}
+          {members.length} member{members.length !== 1 ? "s" : ""} · Department controls access
         </p>
       </div>
 
@@ -77,7 +66,6 @@ export default function TeamView() {
         </div>
       )}
 
-      {/* Auth note after removal */}
       {removedNote && (
         <div style={{
           background: "rgba(255,179,0,0.08)", color: "#92750a", padding: "10px 16px",
@@ -92,7 +80,8 @@ export default function TeamView() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {members.map(m => {
-            const badge = ROLE_BADGES[m.role] || ROLE_BADGES.viewer;
+            const dept = m.department || "";
+            const badge = DEPARTMENTS[dept] || UNASSIGNED;
             const isCurrentUser = m.id === user?.id;
             const justSaved = savedId === m.id;
 
@@ -126,7 +115,7 @@ export default function TeamView() {
                   </div>
                 </div>
 
-                {/* Role dropdown + saved flash */}
+                {/* Department dropdown + saved flash */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   {isCurrentUser ? (
                     <span style={{
@@ -138,16 +127,17 @@ export default function TeamView() {
                     </span>
                   ) : (
                     <select
-                      value={m.role}
-                      onChange={e => handleRoleChange(m.id, e.target.value)}
+                      value={dept}
+                      onChange={e => handleDepartmentChange(m.id, e.target.value)}
                       style={{
-                        padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        border: "1px solid #e5e5e0", background: badge.bg, color: badge.color,
+                        padding: "6px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: `1px solid ${badge.color}40`, background: badge.bg, color: badge.color,
                         cursor: "pointer",
                       }}
                     >
-                      {ROLE_OPTIONS.map(o => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
+                      <option value="">— Unassigned —</option>
+                      {DEPARTMENT_OPTIONS.map(d => (
+                        <option key={d} value={d}>{DEPARTMENTS[d].label}</option>
                       ))}
                     </select>
                   )}
@@ -180,12 +170,11 @@ export default function TeamView() {
         </div>
       )}
 
-      {/* Info footer */}
       <div style={{
         marginTop: 24, padding: "14px 18px", background: "#f8f8f6",
-        border: "1px solid #eeeee9", borderRadius: 12, fontSize: 12, color: "#9ca3af", lineHeight: 1.6,
+        border: "1px solid #eeeee9", borderRadius: 12, fontSize: 12, color: "#6b7280", lineHeight: 1.6,
       }}>
-        Team members sign up at the login page. Change their role here. Default role is Viewer (read-only).
+        <strong>Department controls access:</strong> Admin and Creative get the full app. Venue, Catering, Decor, and Entertainment users see only the simplified Ad Requests page. Unassigned users see a waiting screen until you give them a department.
       </div>
 
       <style>{`@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>

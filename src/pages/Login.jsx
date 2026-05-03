@@ -4,29 +4,19 @@ import useIsMobile from "../hooks/useIsMobile.js";
 import logo from "../assets/logo.png";
 
 export default function Login() {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState("signin");
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const mob = useIsMobile();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setBusy(true);
     try {
-      if (mode === "signup") {
-        await signUp(email, password, fullName);
-        setSuccess("Account created! Sign in — your admin will assign your department.");
-        setMode("signin");
-      } else {
-        await signIn(email, password);
-      }
+      await signIn(email, password);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -47,20 +37,6 @@ export default function Login() {
     minHeight: 44,
     boxSizing: "border-box",
   };
-
-  const tabStyle = (active) => ({
-    flex: 1,
-    padding: "10px 0",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 600,
-    background: active ? "#1a1a1a" : "transparent",
-    color: active ? "#fff" : "#9ca3af",
-    transition: "all 0.2s",
-    minHeight: 44,
-  });
 
   return (
     <div style={{
@@ -89,24 +65,8 @@ export default function Login() {
           <div style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: mob ? 16 : 18, color: "#1a1a1a", letterSpacing: 2, marginTop: 12 }}>SMO CALENDAR</div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-          <button onClick={() => { setMode("signin"); setError(""); setSuccess(""); }} style={tabStyle(mode === "signin")}>Sign In</button>
-          <button onClick={() => { setMode("signup"); setError(""); setSuccess(""); }} style={tabStyle(mode === "signup")}>Sign Up</button>
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {mode === "signup" && (
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              style={inputStyle}
-            />
-          )}
           <input
             type="email"
             placeholder="Email"
@@ -126,7 +86,6 @@ export default function Login() {
           />
 
           {error && <div style={{ color: "#dc2626", fontSize: 13 }}>{error}</div>}
-          {success && <div style={{ color: "#16a34a", fontSize: 13 }}>{success}</div>}
 
           <button
             type="submit"
@@ -147,9 +106,7 @@ export default function Login() {
               width: "100%",
             }}
           >
-            {busy
-              ? mode === "signin" ? "Signing in..." : "Creating account..."
-              : mode === "signin" ? "Sign In" : "Create Account"}
+            {busy ? "Signing in..." : "Sign In"}
           </button>
         </form>
 

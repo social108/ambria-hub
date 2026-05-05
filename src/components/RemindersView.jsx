@@ -23,8 +23,9 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
     const today = new Date(); today.setHours(0,0,0,0);
     const wf = workflowData || {};
 
-    // If every assigned page has reached a done status the work is finished —
-    // drop the event from the Reminders tab entirely.
+    // True when every assigned page has reached a done workflow status — used
+    // to suppress workflow-related reminders (story / creative / ad_start).
+    // Event Day reminders are NEVER suppressed; the event still happens.
     const allPagesDone = (evt) => {
       const pages = evt.pages || [];
       if (pages.length === 0) return false;
@@ -35,12 +36,12 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
     allEvents.forEach(evt => {
       const eventDays = daysUntil(evt.date);
       if (eventDays < -7) return;
-      if (allPagesDone(evt)) return;
 
       const hasAd = (evt.actions || []).includes("ad");
       const adLead = evt.adLeadDays || 15;
+      const allDone = allPagesDone(evt);
 
-      if (((evt.actions || []).includes("story") || true) && !shouldHideReminder("story_reminder", evt, wf)) {
+      if (!allDone && ((evt.actions || []).includes("story") || true) && !shouldHideReminder("story_reminder", evt, wf)) {
         const rDate = getStoryReminder(evt.date);
         const rDays = daysUntil(rDate);
         list.push({
@@ -49,7 +50,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         });
       }
 
-      if (hasAd && !shouldHideReminder("creative_deadline", evt, wf)) {
+      if (!allDone && hasAd && !shouldHideReminder("creative_deadline", evt, wf)) {
         const cDate = getCreativeDeadline(evt.date, adLead);
         const cDays = daysUntil(cDate);
         list.push({
@@ -58,7 +59,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         });
       }
 
-      if (hasAd && !shouldHideReminder("ad_start", evt, wf)) {
+      if (!allDone && hasAd && !shouldHideReminder("ad_start", evt, wf)) {
         const aDate = getAdStartDate(evt.date, adLead);
         const aDays = daysUntil(aDate);
         list.push({
@@ -67,12 +68,11 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         });
       }
 
-      if (!shouldHideReminder("event_day", evt, wf)) {
-        list.push({
-          type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
-          message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
-        });
-      }
+      // Event Day always shows — the event is still happening regardless of workflow.
+      list.push({
+        type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
+        message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
+      });
     });
 
     list.sort((a, b) => a.date.localeCompare(b.date));

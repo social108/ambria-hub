@@ -110,7 +110,7 @@ export default function Dashboard() {
   // Compute urgent count once, reuse in top bar and drawer
   const urgentCount = useMemo(() => {
     if (!allEvents) return 0;
-    const isEventDone = (e) => {
+    const allPagesDone = (e) => {
       const pages = e.pages || [];
       if (pages.length === 0) return false;
       const evtWf = workflowData?.[`${e.date}-${e.name}`] || {};
@@ -119,16 +119,17 @@ export default function Dashboard() {
     return allEvents.filter(e => {
       const d = daysUntil(e.date);
       if (d < 0) return false;
-      if (isEventDone(e)) return false;
       const hasAd = (e.actions || []).includes("ad");
       const adLead = e.adLeadDays || 15;
+      const allDone = allPagesDone(e);
       const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));
       const adStartDays = daysUntil(getAdStartDate(e.date, adLead));
       const storyDays = daysUntil(getStoryReminder(e.date));
-      const eventDayActive = (d >= 0 && d <= 7) && !shouldHideReminder("event_day", e, workflowData);
-      const creativeActive = hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5 && !shouldHideReminder("creative_deadline", e, workflowData);
-      const adStartActive = hasAd && adStartDays >= -2 && adStartDays <= 3 && !shouldHideReminder("ad_start", e, workflowData);
-      const storyActive = storyDays >= -1 && storyDays <= 3 && !shouldHideReminder("story_reminder", e, workflowData);
+      // Event Day is always active within range — mirrors the Reminders tab.
+      const eventDayActive = d >= 0 && d <= 7;
+      const creativeActive = !allDone && hasAd && creativeDeadlineDays >= -2 && creativeDeadlineDays <= 5 && !shouldHideReminder("creative_deadline", e, workflowData);
+      const adStartActive = !allDone && hasAd && adStartDays >= -2 && adStartDays <= 3 && !shouldHideReminder("ad_start", e, workflowData);
+      const storyActive = !allDone && storyDays >= -1 && storyDays <= 3 && !shouldHideReminder("story_reminder", e, workflowData);
       return eventDayActive || creativeActive || adStartActive || storyActive;
     }).length;
   }, [allEvents, workflowData]);

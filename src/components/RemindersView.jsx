@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PAGES, REMINDER_TYPES, ACTION_TYPES, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
+import { PAGES, REMINDER_TYPES, ACTION_TYPES, CAT_OPTIONS, EMPTY_FORM, DONE_STATUSES } from "../lib/constants.js";
 import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryReminder, shouldHideReminder } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
@@ -23,18 +23,28 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
     const today = new Date(); today.setHours(0,0,0,0);
     const wf = workflowData || {};
 
+    // Event is "done" when every assigned page has reached a done status — used
+    // to suppress overdue styling on reminders for past events whose work is finished.
+    const isEventDone = (evt) => {
+      const pages = evt.pages || [];
+      if (pages.length === 0) return false;
+      const evtWf = wf[`${evt.date}-${evt.name}`] || {};
+      return pages.every(pid => DONE_STATUSES.includes(evtWf[pid]?.status));
+    };
+
     allEvents.forEach(evt => {
       const eventDays = daysUntil(evt.date);
       if (eventDays < -7) return;
 
       const hasAd = (evt.actions || []).includes("ad");
       const adLead = evt.adLeadDays || 15;
+      const evtDone = isEventDone(evt);
 
       if (((evt.actions || []).includes("story") || true) && !shouldHideReminder("story_reminder", evt, wf)) {
         const rDate = getStoryReminder(evt.date);
         const rDays = daysUntil(rDate);
         list.push({
-          type: "story_reminder", event: evt, date: rDate, daysUntil: rDays, eventDate: evt.date,
+          type: "story_reminder", event: evt, date: rDate, daysUntil: rDays, eventDate: evt.date, isDone: evtDone,
           message: `Prepare stories for "${evt.name}" across ${(evt.pages || []).length} pages`,
         });
       }
@@ -43,7 +53,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         const cDate = getCreativeDeadline(evt.date, adLead);
         const cDays = daysUntil(cDate);
         list.push({
-          type: "creative_deadline", event: evt, date: cDate, daysUntil: cDays, eventDate: evt.date,
+          type: "creative_deadline", event: evt, date: cDate, daysUntil: cDays, eventDate: evt.date, isDone: evtDone,
           message: `Creative team: Ad for "${evt.name}" must be ready. Ad goes live in 10 days.`,
         });
       }
@@ -52,14 +62,14 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         const aDate = getAdStartDate(evt.date, adLead);
         const aDays = daysUntil(aDate);
         list.push({
-          type: "ad_start", event: evt, date: aDate, daysUntil: aDays, eventDate: evt.date,
+          type: "ad_start", event: evt, date: aDate, daysUntil: aDays, eventDate: evt.date, isDone: evtDone,
           message: `Start running ads for "${evt.name}". Event in ${adLead} days.`,
         });
       }
 
       if (!shouldHideReminder("event_day", evt, wf)) {
         list.push({
-          type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
+          type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date, isDone: evtDone,
           message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
         });
       }
@@ -74,7 +84,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
       if (filter === "all_upcoming") return r.daysUntil >= -2 && r.daysUntil <= 30;
       if (filter === "today") return r.daysUntil === 0;
       if (filter === "this_week") return r.daysUntil >= 0 && r.daysUntil <= 7;
-      if (filter === "overdue") return r.daysUntil < 0;
+      if (filter === "overdue") return r.daysUntil < 0 && !r.isDone;
       if (filter === "creative") return r.type === "creative_deadline" && r.daysUntil >= -2 && r.daysUntil <= 30;
       if (filter === "ads") return r.type === "ad_start" && r.daysUntil >= -2 && r.daysUntil <= 30;
       if (filter === "stories") return r.type === "story_reminder" && r.daysUntil >= -2 && r.daysUntil <= 30;
@@ -84,7 +94,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
 
   const todayCount = reminders.filter(r => r.daysUntil === 0).length;
   const weekCount = reminders.filter(r => r.daysUntil >= 0 && r.daysUntil <= 7).length;
-  const overdueCount = reminders.filter(r => r.daysUntil < 0 && r.daysUntil >= -3).length;
+  const overdueCount = reminders.filter(r => r.daysUntil < 0 && r.daysUntil >= -3 && !r.isDone).length;
 
   const grouped = useMemo(() => {
     const g = {};
@@ -266,7 +276,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
 
             {items.map((r, ri) => {
               const rt = REMINDER_TYPES[r.type];
-              const cardClass = `reminder-card ${r.daysUntil === 0 ? "today-card" : ""} ${r.daysUntil < 0 ? "overdue-card" : ""} ${r.daysUntil >= 0 && r.daysUntil <= 2 ? "urgent" : ""}`;
+              const cardClass = `reminder-card ${r.daysUntil === 0 && !r.isDone ? "today-card" : ""} ${r.daysUntil < 0 && !r.isDone ? "overdue-card" : ""} ${r.daysUntil >= 0 && r.daysUntil <= 2 && !r.isDone ? "urgent" : ""}`;
 
               return (
                 <div key={ri} className={cardClass} onClick={() => openDetail(r)}>
@@ -279,7 +289,8 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: rt.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{rt.label}</span>
                         {r.daysUntil === 0 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#92400e", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
-                        {r.daysUntil < 0 && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.1)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
+                        {r.daysUntil < 0 && !r.isDone && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.1)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
+                        {r.daysUntil < 0 && r.isDone && <span style={{ fontSize: 9, background: "rgba(0,0,0,0.04)", color: "#9ca3af", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>DONE</span>}
                         {r.daysUntil === 1 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TOMORROW</span>}
                       </div>
                       <div style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 }}>
@@ -364,7 +375,8 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                       {rt.icon} {rt.label}
                     </span>
                     {eventDays === 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "rgba(255,179,0,0.12)", color: "#92400e" }}>TODAY</span>}
-                    {eventDays < 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "rgba(239,83,80,0.1)", color: "#EF5350" }}>OVERDUE</span>}
+                    {eventDays < 0 && !r.isDone && <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "rgba(239,83,80,0.1)", color: "#EF5350" }}>OVERDUE</span>}
+                    {eventDays < 0 && r.isDone && <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "#9ca3af" }}>DONE</span>}
                   </div>
 
                   {/* Note / Action plan */}

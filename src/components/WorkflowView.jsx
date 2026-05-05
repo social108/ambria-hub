@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { PAGES, ACTION_TYPES, KANBAN_COLUMNS } from "../lib/constants.js";
+import { PAGES, ACTION_TYPES, KANBAN_COLUMNS, DONE_STATUSES } from "../lib/constants.js";
 import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -65,7 +65,7 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
       filter === "all" ? true
       : filter === "upcoming" ? (d >= -3 && d <= 45)
       : filter === "thisweek" ? (d >= -1 && d <= 7)
-      : filter === "overdue" ? (d < 0 && (st === "pending" || st === "creative_wip"))
+      : filter === "overdue" ? (d < 0 && !DONE_STATUSES.includes(st))
       : true;
 
     // 1) Calendar events
@@ -147,7 +147,7 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
 
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === "posted" || t.status === "completed" || t.status === "ad_live").length;
-  const overdueTasks = tasks.filter(t => t.days < 0 && (t.status === "pending" || t.status === "creative_wip")).length;
+  const overdueTasks = tasks.filter(t => t.days < 0 && !DONE_STATUSES.includes(t.status)).length;
 
   return (
     <div>
@@ -322,7 +322,13 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
                 {cards.map(task => {
                   const isExpanded = expandedCard === task.taskId;
                   const isDragging = dragItem && dragItem.taskId === task.taskId;
-                  const urgencyColor = task.days < 0 ? "#EF5350" : task.days <= 3 ? "#FF7043" : task.days <= 7 ? "#FFB300" : "transparent";
+                  const isDone = DONE_STATUSES.includes(task.status);
+                  const urgencyColor = isDone
+                    ? "transparent"
+                    : task.days < 0 ? "#EF5350"
+                    : task.days <= 3 ? "#FF7043"
+                    : task.days <= 7 ? "#FFB300"
+                    : "transparent";
 
                   const colIndex = KANBAN_COLUMNS.findIndex(c => c.id === col.id);
                   const moveTargets = KANBAN_COLUMNS.filter((c, i) => i !== colIndex);
@@ -368,7 +374,11 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
                             {task.days === 0 ? "TODAY" : `${task.days}d`}
                           </span>
                         ) : (
-                          <span style={{ fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(239,83,80,0.12)", color: "#EF5350" }}>
+                          <span style={{
+                            fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4,
+                            background: isDone ? "rgba(0,0,0,0.04)" : "rgba(239,83,80,0.12)",
+                            color: isDone ? "#9ca3af" : "#EF5350",
+                          }}>
                             {Math.abs(task.days)}d ago
                           </span>
                         )}

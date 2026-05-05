@@ -36,6 +36,9 @@ export const AD_REQUEST_STATUS = {
   rejected: { label: "Rejected", color: "#dc2626", bg: "#fef2f2" },
 };
 
+// Statuses that mean the work is done — used to suppress overdue/urgency styling.
+export const DONE_STATUSES = ["ready", "posted", "ad_live", "completed", "done", "skipped"];
+
 export const KANBAN_COLUMNS = [
   { id: "pending", label: "Pending", icon: "○", color: "#78909C", accent: "rgba(120,144,156,0.25)" },
   { id: "creative_wip", label: "Creative WIP", icon: "✎", color: "#FFB300", accent: "rgba(255,179,0,0.25)" },

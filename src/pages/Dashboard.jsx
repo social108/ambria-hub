@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { supabase } from "../supabaseClient.js";
-import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder, isEventFullyDone, shouldHideReminder } from "../lib/helpers.js";
+import { daysUntil, getCreativeDeadline, getAdStartDate, getStoryReminder, shouldHideReminder } from "../lib/helpers.js";
+import { DONE_STATUSES } from "../lib/constants.js";
 import useEvents from "../hooks/useEvents.js";
 import useWorkflow from "../hooks/useWorkflow.js";
 import useAdRequests from "../hooks/useAdRequests.js";
@@ -109,10 +110,16 @@ export default function Dashboard() {
   // Compute urgent count once, reuse in top bar and drawer
   const urgentCount = useMemo(() => {
     if (!allEvents) return 0;
+    const isEventDone = (e) => {
+      const pages = e.pages || [];
+      if (pages.length === 0) return false;
+      const evtWf = workflowData?.[`${e.date}-${e.name}`] || {};
+      return pages.every(pid => DONE_STATUSES.includes(evtWf[pid]?.status));
+    };
     return allEvents.filter(e => {
       const d = daysUntil(e.date);
       if (d < 0) return false;
-      if (isEventFullyDone(e, workflowData)) return false;
+      if (isEventDone(e)) return false;
       const hasAd = (e.actions || []).includes("ad");
       const adLead = e.adLeadDays || 15;
       const creativeDeadlineDays = daysUntil(getCreativeDeadline(e.date, adLead));

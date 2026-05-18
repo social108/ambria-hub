@@ -3,6 +3,7 @@ import { PAGES, ACTION_TYPES, KANBAN_COLUMNS, DONE_STATUSES } from "../lib/const
 import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
+import WorkflowHistory from "./WorkflowHistory.jsx";
 
 const BUDGET_VISIBLE_STATUSES = ["posted", "ad_live", "completed"];
 
@@ -49,6 +50,7 @@ function BudgetInput({ currentValue, onSave }) {
 
 export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent, allEvents, role }) {
   const canMove = role === "admin" || role === "creative";
+  const [view, setView] = useState("board");
   const [filter, setFilter] = useState("upcoming");
   const [pageFilter, setPageFilter] = useState("All");
   const [dragItem, setDragItem] = useState(null);
@@ -235,9 +237,44 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
         <h1 style={{ fontFamily: "'Sora'", fontSize: mob ? 22 : 28, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
           Workflow Board
         </h1>
-        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>{mob ? "Tap cards to move · Swipe columns" : "Drag cards between columns or click to move"}</p>
+        <p style={{ fontSize: mob ? 11 : 13, color: "#9ca3af" }}>
+          {view === "history"
+            ? "Completed tasks · monthly report"
+            : (mob ? "Tap cards to move · Swipe columns" : "Drag cards between columns or click to move")}
+        </p>
       </div>
 
+      {/* View toggle: Board / History */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+        {[
+          { id: "board", label: "Board" },
+          { id: "history", label: "📊 History" },
+        ].map(v => {
+          const active = view === v.id;
+          return (
+            <button
+              key={v.id}
+              onClick={() => setView(v.id)}
+              style={{
+                padding: "8px 18px", borderRadius: 8,
+                border: `1px solid ${active ? "#1a1a1a" : "#e5e5e0"}`,
+                background: active ? "#1a1a1a" : "#ffffff",
+                color: active ? "#ffffff" : "#6b7280",
+                fontSize: 13, fontWeight: 700, cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              {v.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {view === "history" && (
+        <WorkflowHistory data={data} allEvents={allEvents} />
+      )}
+
+      {view === "board" && <>
       {/* Stats */}
       <div className="kanban-stats-bar">
         <div className="kanban-stat">
@@ -444,6 +481,7 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
           );
         })}
       </div>
+      </>}
     </div>
   );
 }

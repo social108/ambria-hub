@@ -47,11 +47,15 @@ export function AuthProvider({ children }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchProfile(s.user.id);
+        // Department isn't known yet for this new session — show the
+        // loading screen instead of flashing Access Denied while it fetches.
+        setLoading(true);
+        fetchProfile(s.user.id).finally(() => setLoading(false));
       } else {
         setRole(null);
         setDepartment(null);
         setTeamMembers([]);
+        setLoading(false);
       }
     });
 

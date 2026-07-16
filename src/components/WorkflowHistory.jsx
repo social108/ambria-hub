@@ -39,6 +39,12 @@ export default function WorkflowHistory({ data, allEvents }) {
     });
   };
 
+  const fyLabel = `FY ${FY_MONTHS[0].y}-${String(FY_MONTHS[FY_MONTHS.length - 1].y).slice(-2)}`;
+  const allYearActive = FY_MONTHS.every(({ y, m }) => selectedMonths.has(monthKey(y, m)));
+  const toggleYear = () => {
+    setSelectedMonths(allYearActive ? new Set() : new Set(FY_MONTHS.map(({ y, m }) => monthKey(y, m))));
+  };
+
   // Resolve every completed workflow_status row → event metadata.
   const completedItems = useMemo(() => {
     const adRequestsById = new Map((data.adRequests || []).map(r => [r.id, r]));
@@ -294,6 +300,13 @@ export default function WorkflowHistory({ data, allEvents }) {
 
       {/* Month selector */}
       <div className="hist-toggle-row">
+        <button
+          className={`hist-month-pill ${allYearActive ? "active" : ""}`}
+          style={{ fontWeight: 800 }}
+          onClick={toggleYear}
+        >
+          {fyLabel} {allYearActive ? "✓" : ""}
+        </button>
         {FY_MONTHS.map(({ y, m }) => {
           const key = monthKey(y, m);
           const active = selectedMonths.has(key);

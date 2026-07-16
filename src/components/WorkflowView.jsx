@@ -160,7 +160,7 @@ export default function WorkflowView({ data, updateWorkflow, updateWorkflowEvent
         }
         .kanban-scroll::-webkit-scrollbar { display: none; }
         .kanban-col {
-          min-width: ${mob ? "260px" : "220px"}; max-width: ${mob ? "280px" : "260px"}; flex: 1 0 ${mob ? "260px" : "220px"};
+          min-width: ${mob ? "260px" : "160px"}; max-width: ${mob ? "280px" : "none"}; flex: 1 1 ${mob ? "260px" : "160px"};
           background: #ffffff; border: 1px solid #eeeee9;
           border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
           display: flex; flex-direction: column; overflow: hidden;

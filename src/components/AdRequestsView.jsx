@@ -78,7 +78,30 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
     });
   };
 
-  const handleSubmit = () => {
+  // Inserts one pending workflow_status row per page for a (now-approved) ad
+  // request. Shared by explicit approval and admin self-submission auto-approval.
+  const createWorkflowCards = async (reqId, pages) => {
+    if (!pages || pages.length === 0) return;
+    const eventKey = `ad-${reqId}`;
+    const rows = pages.map(pageId => ({
+      event_key: eventKey,
+      page_id: pageId,
+      status: "pending",
+    }));
+    // ignoreDuplicates so re-approving never adds a second row per page
+    const { error } = await supabase
+      .from("workflow_status")
+      .upsert(rows, { onConflict: "event_key,page_id", ignoreDuplicates: true });
+    if (error) {
+      console.error("createWorkflowCards upsert error:", error);
+      alert("Approved, but failed to create workflow cards: " + error.message);
+    }
+    // Force a refresh of workflowData so the new ad-cards show on the
+    // workflow board even if Supabase Realtime is disabled for this project.
+    if (refetchWorkflow) await refetchWorkflow();
+  };
+
+  const handleSubmit = async () => {
     const fieldErrors = {};
     if (!form.eventName.trim()) fieldErrors.eventName = "Event/Campaign name is required";
     if (!form.startDate) fieldErrors.startDate = "Ad start date is required";
@@ -86,7 +109,11 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
     if (!form.requestedBy) fieldErrors.requestedBy = "Please select who is requesting";
     if (form.pages.length === 0) fieldErrors.pages = "Select at least one page";
     if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
-    addAdRequest({ ...form, createdBy: user?.id, department });
+    // Admin approving their own request would just be rubber-stamping it —
+    // skip the pending step entirely when an admin submits.
+    const autoApprove = role === "admin";
+    const newId = await addAdRequest({ ...form, createdBy: user?.id, department, status: autoApprove ? "approved" : "pending" });
+    if (autoApprove && newId) await createWorkflowCards(newId, form.pages);
     setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
     setErrors({});
     setShowForm(false);
@@ -102,26 +129,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
     setApprovingId(req.id);
     try {
       await updateAdRequest(req.id, { status: "approved", rejectReason: "" });
-      const pages = req.pages || [];
-      if (pages.length > 0) {
-        const eventKey = `ad-${req.id}`;
-        const rows = pages.map(pageId => ({
-          event_key: eventKey,
-          page_id: pageId,
-          status: "pending",
-        }));
-        // ignoreDuplicates so re-approving never adds a second row per page
-        const { error } = await supabase
-          .from("workflow_status")
-          .upsert(rows, { onConflict: "event_key,page_id", ignoreDuplicates: true });
-        if (error) {
-          console.error("handleApprove workflow upsert error:", error);
-          alert("Approved, but failed to create workflow cards: " + error.message);
-        }
-      }
-      // Force a refresh of workflowData so the new ad-cards show on the
-      // workflow board even if Supabase Realtime is disabled for this project.
-      if (refetchWorkflow) await refetchWorkflow();
+      await createWorkflowCards(req.id, req.pages || []);
     } finally {
       setApprovingId(null);
     }

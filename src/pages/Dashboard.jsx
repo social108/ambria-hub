@@ -344,6 +344,7 @@ export default function Dashboard() {
           <div className="dash-nav-tabs" style={{
             display: "flex", gap: 8, flex: 1, minWidth: 0,
             overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+            paddingTop: 6, paddingBottom: 6, paddingRight: 6,
           }}>
             {navTabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{

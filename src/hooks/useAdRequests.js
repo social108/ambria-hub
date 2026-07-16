@@ -51,6 +51,7 @@ export default function useAdRequests({ onSyncError, ownerId } = {}) {
 
   const addAdRequest = useCallback(async (req) => {
     const newId = crypto.randomUUID();
+    const status = req.status || "pending";
     const row = {
       id: newId,
       event_name: req.eventName,
@@ -60,12 +61,12 @@ export default function useAdRequests({ onSyncError, ownerId } = {}) {
       end_date: req.endDate || null,
       brief: req.brief || "",
       requested_by: req.requestedBy || "",
-      status: "pending",
+      status,
       created_by: req.createdBy || null,
       department: req.department || "",
     };
     const { error } = await supabase.from("ad_requests").insert(row);
-    if (error) { console.error("addAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return; }
+    if (error) { console.error("addAdRequest error:", error); onSyncError?.("Sync error — retrying..."); return null; }
     setAdRequests(prev => [...prev, {
       id: newId,
       eventName: req.eventName,
@@ -75,12 +76,13 @@ export default function useAdRequests({ onSyncError, ownerId } = {}) {
       endDate: req.endDate,
       brief: req.brief || "",
       requestedBy: req.requestedBy || "",
-      status: "pending",
+      status,
       rejectReason: "",
       department: req.department || "",
       createdBy: req.createdBy || null,
       createdAt: new Date().toISOString(),
     }]);
+    return newId;
   }, [onSyncError]);
 
   const updateAdRequest = useCallback(async (id, updates) => {

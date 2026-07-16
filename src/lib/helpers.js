@@ -71,19 +71,20 @@ export function getAdWorkflowSummary(adRequestId, workflowData) {
   return { counts, total, done, inProgress };
 }
 
-// Returns a list of missing required field labels for the event add/edit form.
-// Category/Priority/Ad Lead Days must be explicitly chosen — an empty string
-// means the user never touched the field.
+// Returns a { field: message } map of validation errors for the event add/edit
+// form, keyed by form field name so callers can render them inline. Category/
+// Priority/Ad Lead Days must be explicitly chosen — an empty string means the
+// user never touched the field.
 export function validateEventForm(form) {
-  const missing = [];
-  if (!form.name?.trim()) missing.push("Event Name");
-  if (!form.date) missing.push("Date");
-  if (!form.cat) missing.push("Category");
-  if (form.priority === "" || form.priority === null || form.priority === undefined) missing.push("Priority");
-  if (form.adLeadDays === "" || form.adLeadDays === null || form.adLeadDays === undefined) missing.push("Ad Lead Days");
-  if (!form.actions?.length) missing.push("Actions");
-  if (!form.pages?.length) missing.push("Post on Pages");
-  return missing;
+  const errors = {};
+  if (!form.name?.trim()) errors.name = "Event Name is required";
+  if (!form.date) errors.date = "Date is required";
+  if (!form.cat) errors.cat = "Please select a category";
+  if (form.priority === "" || form.priority === null || form.priority === undefined) errors.priority = "Please select a priority";
+  if (form.adLeadDays === "" || form.adLeadDays === null || form.adLeadDays === undefined) errors.adLeadDays = "Ad Lead Days is required";
+  if (!form.actions?.length) errors.actions = "Select at least one action";
+  if (!form.pages?.length) errors.pages = "Select at least one page";
+  return errors;
 }
 
 export function loadData(key) {

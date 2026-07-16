@@ -3,6 +3,7 @@ import { PAGES, ACTION_TYPES, MONTHS_FULL, CAT_OPTIONS, EMPTY_FORM } from "../li
 import { EVENTS } from "../lib/events.js";
 import { daysUntil, formatDate, validateEventForm } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
+import FieldError from "./shared/FieldError.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
@@ -18,6 +19,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   const [selectedDate, setSelectedDate] = useState(null);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [errors, setErrors] = useState({});
   const [actionFilter, setActionFilter] = useState("All");
   const mob = useIsMobile();
 
@@ -78,6 +80,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
 
   const openAdd = (dateStr) => {
     setForm({ ...EMPTY_FORM, date: dateStr || "" });
+    setErrors({});
     setModal({ mode: "add" });
   };
 
@@ -87,6 +90,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
       actions: [...(evt.actions || [])], pages: [...(evt.pages || [])],
       priority: evt.priority ?? 2, adLeadDays: evt.adLeadDays || 15, note: evt.note || "",
     });
+    setErrors({});
     setModal({ mode: "edit", event: evt });
   };
 
@@ -94,9 +98,18 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
     setSelectedDate(selectedDate === dateStr ? null : dateStr);
   };
 
+  const setField = (patch) => {
+    setForm(f => ({ ...f, ...patch }));
+    setErrors(e => {
+      const next = { ...e };
+      Object.keys(patch).forEach(k => delete next[k]);
+      return next;
+    });
+  };
+
   const handleSave = () => {
-    const missing = validateEventForm(form);
-    if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
+    const fieldErrors = validateEventForm(form);
+    if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
     if (modal.mode === "add") {
       addEvent(form);
     } else if (modal.mode === "edit") {
@@ -105,6 +118,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
     }
     setModal(null);
     setForm({ ...EMPTY_FORM });
+    setErrors({});
   };
 
   const handleDelete = (evt) => {
@@ -123,8 +137,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
     }
   };
 
-  const toggleFormAction = (a) => setForm(f => ({ ...f, actions: f.actions.includes(a) ? f.actions.filter(x => x !== a) : [...f.actions, a] }));
-  const toggleFormPage = (p) => setForm(f => ({ ...f, pages: f.pages.includes(p) ? f.pages.filter(x => x !== p) : [...f.pages, p] }));
+  const toggleFormAction = (a) => {
+    setForm(f => ({ ...f, actions: f.actions.includes(a) ? f.actions.filter(x => x !== a) : [...f.actions, a] }));
+    setErrors(e => ({ ...e, actions: undefined }));
+  };
+  const toggleFormPage = (p) => {
+    setForm(f => ({ ...f, pages: f.pages.includes(p) ? f.pages.filter(x => x !== p) : [...f.pages, p] }));
+    setErrors(e => ({ ...e, pages: undefined }));
+  };
 
   const monthEvents = allEvents.filter(e => {
     const d = new Date(e.date);
@@ -380,32 +400,37 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                 <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 14 }}>
                   <div style={mob ? {} : { gridColumn: "1 / -1" }}>
                     <FieldLabel>Event Name</FieldLabel>
-                    <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="e.g. Dussehra Mega Night" style={inputStyle} />
+                    <input value={form.name} onChange={e => setField({ name: e.target.value })} placeholder="e.g. Dussehra Mega Night" style={{ ...inputStyle, ...(errors.name ? { border: "1px solid #dc2626" } : {}) }} />
+                    <FieldError>{errors.name}</FieldError>
                   </div>
                   <div>
                     <FieldLabel>Date</FieldLabel>
-                    <input type="date" value={form.date} min={modal.mode === "add" ? todayStr : undefined} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
+                    <input type="date" value={form.date} min={modal.mode === "add" ? todayStr : undefined} onChange={e => setField({ date: e.target.value })} style={{ ...inputStyle, ...(errors.date ? { border: "1px solid #dc2626" } : {}) }} />
+                    <FieldError>{errors.date}</FieldError>
                   </div>
                   <div>
                     <FieldLabel>Category</FieldLabel>
-                    <select value={form.cat} onChange={e => setForm(f => ({...f, cat: e.target.value}))} style={inputStyle}>
+                    <select value={form.cat} onChange={e => setField({ cat: e.target.value })} style={{ ...inputStyle, ...(errors.cat ? { border: "1px solid #dc2626" } : {}) }}>
                       <option value="">-- Select Category --</option>
                       {CAT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                    <FieldError>{errors.cat}</FieldError>
                   </div>
                   <div>
                     <FieldLabel>Priority</FieldLabel>
-                    <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value === "" ? "" : parseInt(e.target.value)}))} style={inputStyle}>
+                    <select value={form.priority} onChange={e => setField({ priority: e.target.value === "" ? "" : parseInt(e.target.value) })} style={{ ...inputStyle, ...(errors.priority ? { border: "1px solid #dc2626" } : {}) }}>
                       <option value="">-- Select Priority --</option>
                       <option value={0}>Low</option>
                       <option value={1}>Medium</option>
                       <option value={2}>High</option>
                       <option value={3}>Critical</option>
                     </select>
+                    <FieldError>{errors.priority}</FieldError>
                   </div>
                   <div>
                     <FieldLabel>Ad Lead Days</FieldLabel>
-                    <input type="number" value={form.adLeadDays} onChange={e => setForm(f => ({...f, adLeadDays: e.target.value === "" ? "" : (parseInt(e.target.value) || 0)}))} style={inputStyle} />
+                    <input type="number" value={form.adLeadDays} onChange={e => setField({ adLeadDays: e.target.value === "" ? "" : (parseInt(e.target.value) || 0) })} style={{ ...inputStyle, ...(errors.adLeadDays ? { border: "1px solid #dc2626" } : {}) }} />
+                    <FieldError>{errors.adLeadDays}</FieldError>
                   </div>
                 </div>
 
@@ -421,13 +446,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                       }}>{v.icon} {v.label}</button>
                     ))}
                   </div>
+                  <FieldError>{errors.actions}</FieldError>
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
                   <FieldLabel>Post on Pages</FieldLabel>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {(() => { const allIds = PAGES.map(p => p.id); const allSel = allIds.every(id => form.pages.includes(id)); return (
-                      <button onClick={() => setForm(f => ({ ...f, pages: allSel ? [] : allIds }))} style={{
+                      <button onClick={() => { setForm(f => ({ ...f, pages: allSel ? [] : allIds })); setErrors(e => ({ ...e, pages: undefined })); }} style={{
                         padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
                         border: allSel ? "1px solid #1a1a1a" : "1px solid #e5e5e0",
                         background: allSel ? "#1a1a1a" : "#ffffff",
@@ -443,6 +469,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                       }}>{pg.name.replace("Ambria ", "")}</button>
                     ))}
                   </div>
+                  <FieldError>{errors.pages}</FieldError>
                 </div>
 
                 <div style={{ marginBottom: 18 }}>

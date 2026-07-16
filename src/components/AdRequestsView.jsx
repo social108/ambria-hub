@@ -5,6 +5,7 @@ import { supabase } from "../supabaseClient.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import Chip from "./shared/Chip.jsx";
 import InputField from "./shared/InputField.jsx";
+import FieldError from "./shared/FieldError.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import AdWorkflowProgress from "./shared/AdWorkflowProgress.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -34,6 +35,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
   const canDelete = role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
+  const [errors, setErrors] = useState({});
   const [statusFilter, setStatusFilter] = useState("All");
   const [rejectTarget, setRejectTarget] = useState(null); // { id, eventName }
   const [rejectReason, setRejectReason] = useState("");
@@ -67,21 +69,32 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
       .reduce((s, a) => s + getRequestSpent(a, workflowData), 0);
   }, [data.adRequests, workflowData]);
 
+  const setField = (patch) => {
+    setForm(f => ({ ...f, ...patch }));
+    setErrors(e => {
+      const next = { ...e };
+      Object.keys(patch).forEach(k => delete next[k]);
+      return next;
+    });
+  };
+
   const handleSubmit = () => {
-    const missing = [];
-    if (!form.eventName.trim()) missing.push("event/campaign name");
-    if (!form.startDate) missing.push("ad start date");
-    if (!form.endDate) missing.push("ad end date");
-    if (!form.requestedBy) missing.push("requested by");
-    if (form.pages.length === 0) missing.push("run ad on pages");
-    if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
+    const fieldErrors = {};
+    if (!form.eventName.trim()) fieldErrors.eventName = "Event/Campaign name is required";
+    if (!form.startDate) fieldErrors.startDate = "Ad start date is required";
+    if (!form.endDate) fieldErrors.endDate = "Ad end date is required";
+    if (!form.requestedBy) fieldErrors.requestedBy = "Please select who is requesting";
+    if (form.pages.length === 0) fieldErrors.pages = "Select at least one page";
+    if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
     addAdRequest({ ...form, createdBy: user?.id, department });
     setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
+    setErrors({});
     setShowForm(false);
   };
 
   const togglePage = (pid) => {
     setForm(f => ({ ...f, pages: f.pages.includes(pid) ? f.pages.filter(p => p !== pid) : [...f.pages, pid] }));
+    setErrors(e => ({ ...e, pages: undefined }));
   };
 
   const handleApprove = async (req) => {
@@ -173,17 +186,17 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
           <style>{`@keyframes fadeSlide { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }`}</style>
           <div style={{ fontSize: 16, fontFamily: "'Sora'", fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>New Ad Request</div>
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({...f, eventName: v}))} placeholder="e.g. Diwali Night 2026" />
-            <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({...f, startDate: v}))} type="date" />
-            <InputField label="Ad End Date" value={form.endDate} onChange={v => setForm(f => ({...f, endDate: v}))} type="date" />
+            <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setField({ eventName: v })} placeholder="e.g. Diwali Night 2026" error={errors.eventName} />
+            <InputField label="Ad Start Date" value={form.startDate} onChange={v => setField({ startDate: v })} type="date" error={errors.startDate} />
+            <InputField label="Ad End Date" value={form.endDate} onChange={v => setField({ endDate: v })} type="date" error={errors.endDate} />
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Requested By</div>
               <select
                 value={form.requestedBy}
-                onChange={e => setForm(f => ({ ...f, requestedBy: e.target.value }))}
+                onChange={e => setField({ requestedBy: e.target.value })}
                 style={{
                   width: "100%", padding: "9px 12px", background: "#f5f4f1",
-                  border: "1px solid #e5e5e0", borderRadius: 10,
+                  border: `1px solid ${errors.requestedBy ? "#dc2626" : "#e5e5e0"}`, borderRadius: 10,
                   color: "#1a1a1a", fontSize: 13, minHeight: 44,
                   boxSizing: "border-box", cursor: "pointer",
                 }}
@@ -201,6 +214,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
                   );
                 })}
               </select>
+              <FieldError>{errors.requestedBy}</FieldError>
               {rosters.length === 0 && (
                 <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
                   No team rosters yet — add members on the Team page.
@@ -215,7 +229,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {(() => { const adIds = PAGES.filter(p => !p.noAds).map(p => p.id); const allSel = adIds.every(id => form.pages.includes(id)); return (
-                <button onClick={() => setForm(f => ({ ...f, pages: allSel ? [] : adIds }))} style={{
+                <button onClick={() => { setForm(f => ({ ...f, pages: allSel ? [] : adIds })); setErrors(e => ({ ...e, pages: undefined })); }} style={{
                   padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
                   border: allSel ? "1px solid #1a1a1a" : "1px solid #e5e5e0",
                   background: allSel ? "#1a1a1a" : "#ffffff",
@@ -231,6 +245,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
                 }}>{pg.name}</button>
               ))}
             </div>
+            <FieldError>{errors.pages}</FieldError>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
@@ -240,7 +255,7 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={handleSubmit} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Submit Request</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Cancel</button>
+            <button onClick={() => { setShowForm(false); setErrors({}); }} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0", background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer", ...(mob ? { flex: 1 } : {}) }}>Cancel</button>
           </div>
         </div>
       )}

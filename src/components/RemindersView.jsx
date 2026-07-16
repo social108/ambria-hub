@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { PAGES, REMINDER_TYPES, ACTION_TYPES, CAT_OPTIONS, EMPTY_FORM, DONE_STATUSES } from "../lib/constants.js";
-import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryReminder, shouldHideReminder } from "../lib/helpers.js";
+import { daysUntil, formatDate, getCreativeDeadline, getAdStartDate, getStoryReminder, shouldHideReminder, validateEventForm } from "../lib/helpers.js";
 import Chip from "./shared/Chip.jsx";
 import EmptyState from "./shared/EmptyState.jsx";
 import FieldLabel from "./shared/FieldLabel.jsx";
@@ -130,7 +130,8 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
   };
 
   const handleSave = () => {
-    if (!form.name || !form.date) return;
+    const missing = validateEventForm(form);
+    if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
     const evt = selectedReminder.event;
     const isBuiltin = !evt.custom;
     updateEvent(evt.id, form, isBuiltin);
@@ -490,12 +491,14 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                     <div>
                       <FieldLabel>Category</FieldLabel>
                       <select value={form.cat} onChange={e => setForm(f => ({...f, cat: e.target.value}))} style={inputStyle}>
+                        <option value="">-- Select Category --</option>
                         {CAT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
                       <FieldLabel>Priority</FieldLabel>
-                      <select value={form.priority} onChange={e => setForm(f => ({...f, priority: parseInt(e.target.value)}))} style={inputStyle}>
+                      <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value === "" ? "" : parseInt(e.target.value)}))} style={inputStyle}>
+                        <option value="">-- Select Priority --</option>
                         <option value={0}>Low</option>
                         <option value={1}>Medium</option>
                         <option value={2}>High</option>
@@ -504,7 +507,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                     </div>
                     <div>
                       <FieldLabel>Ad Lead Days</FieldLabel>
-                      <input type="number" value={form.adLeadDays} onChange={e => setForm(f => ({...f, adLeadDays: parseInt(e.target.value) || 0}))} style={inputStyle} />
+                      <input type="number" value={form.adLeadDays} onChange={e => setForm(f => ({...f, adLeadDays: e.target.value === "" ? "" : (parseInt(e.target.value) || 0)}))} style={inputStyle} />
                     </div>
                   </div>
 

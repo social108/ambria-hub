@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PAGES, ACTION_TYPES, MONTHS_SHORT, MONTHS_FULL } from "../lib/constants.js";
+import { PAGES, ACTION_TYPES, MONTHS_SHORT, MONTHS_FULL, WORKFLOW_STATUS } from "../lib/constants.js";
 import { formatDate } from "../lib/helpers.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 
@@ -29,6 +29,7 @@ export default function WorkflowHistory({ data, allEvents }) {
   })();
 
   const [selectedMonths, setSelectedMonths] = useState(new Set([defaultKey]));
+  const [detailEvent, setDetailEvent] = useState(null);
 
   const toggleMonth = (key) => {
     setSelectedMonths(prev => {
@@ -62,6 +63,8 @@ export default function WorkflowHistory({ data, allEvents }) {
             isAdRequest: true,
             allPages: req.pages || [],
             priority: 2,
+            cat: null,
+            note: req.brief || "",
           };
         } else {
           const e = eventsByKey.get(eventKey);
@@ -74,6 +77,8 @@ export default function WorkflowHistory({ data, allEvents }) {
             isAdRequest: false,
             allPages: e.pages || [],
             priority: e.priority || 0,
+            cat: e.cat || "",
+            note: e.note || "",
           };
         }
         items.push({
@@ -272,6 +277,19 @@ export default function WorkflowHistory({ data, allEvents }) {
           font-size: 14px; background: #ffffff; border: 1px dashed #eeeee9;
           border-radius: 12px;
         }
+        .hist-detail-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); z-index: 200;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .hist-detail-modal {
+          background: #ffffff; border: 1px solid #e5e5e0; border-radius: 20px;
+          width: ${mob ? "95vw" : "520px"}; max-width: 95vw; max-height: ${mob ? "85vh" : "90vh"}; overflow-y: auto;
+          padding: ${mob ? "20px" : "26px"}; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+        }
+        .hist-detail-page-row {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 12px; border-radius: 8px; background: #f8f8f6; margin-bottom: 6px;
+        }
       `}</style>
 
       {/* Month selector */}
@@ -368,7 +386,8 @@ export default function WorkflowHistory({ data, allEvents }) {
                         <div
                           key={ev.key}
                           className="hist-event-card"
-                          style={{ borderLeftColor: priorityColor }}
+                          style={{ borderLeftColor: priorityColor, cursor: "pointer" }}
+                          onClick={() => setDetailEvent(ev)}
                         >
                           <div className="hist-event-name">
                             <span className="title">✅ {ev.event.name}</span>
@@ -420,6 +439,75 @@ export default function WorkflowHistory({ data, allEvents }) {
           </div>
         </>
       )}
+
+      {detailEvent && (() => {
+        const ev = detailEvent;
+        const pageStatuses = data.workflow?.[ev.key] || {};
+        const priorityLabels = ["Low", "Medium", "High", "Critical"];
+        return (
+          <div className="hist-detail-overlay" onClick={() => setDetailEvent(null)}>
+            <div className="hist-detail-modal" onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: "'Sora'", fontSize: mob ? 17 : 19, fontWeight: 700, color: "#1a1a1a" }}>
+                    ✅ {ev.event.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{formatDate(ev.event.date)}</div>
+                </div>
+                <button onClick={() => setDetailEvent(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 20, cursor: "pointer" }}>✕</button>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "#f3f2ef", color: "#6b7280" }}>
+                  {priorityLabels[ev.event.priority] || "Low"} Priority
+                </span>
+                {ev.event.cat && (
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 6, background: "#f3f2ef", color: "#6b7280" }}>
+                    {ev.event.cat}
+                  </span>
+                )}
+                {ev.event.isAdRequest && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, background: "rgba(230,81,0,0.1)", color: "#E65100" }}>
+                    Ad Request
+                  </span>
+                )}
+              </div>
+
+              {ev.event.note && (
+                <div style={{ background: "#f8f8f6", border: "1px solid #eeeee9", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
+                  {ev.event.note}
+                </div>
+              )}
+
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+                Per-Page Status
+              </div>
+              {(ev.event.allPages || []).map(pid => {
+                const pg = PAGES.find(p => p.id === pid);
+                if (!pg) return null;
+                const info = pageStatuses[pid];
+                const statusInfo = WORKFLOW_STATUS[info?.status] || WORKFLOW_STATUS.pending;
+                const budget = parseFloat(info?.budget) || 0;
+                return (
+                  <div key={pid} className="hist-detail-page-row">
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a" }}>{pg.name.replace("Ambria ", "")}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {budget > 0 && <span style={{ fontSize: 11, color: "#92400e" }}>{formatINR(budget)}</span>}
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6, background: statusInfo.bg, color: statusInfo.color }}>
+                        {statusInfo.label}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {ev.budget > 0 && (
+                <div className="hist-budget" style={{ marginTop: 8 }}>💰 Total Budget: {formatINR(ev.budget)}</div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -80,7 +80,7 @@ export const DEPARTMENTS = {
 // Admin is intentionally excluded — admins are bootstrapped manually.
 export const DEPARTMENT_OPTIONS = ["creative", "venue", "catering", "decor", "entertainment"];
 
-export const EMPTY_FORM = { name: "", date: "", cat: "Seasonal", actions: [], pages: [], priority: 2, adLeadDays: 15, note: "" };
+export const EMPTY_FORM = { name: "", date: "", cat: "", actions: [], pages: [], priority: "", adLeadDays: "", note: "" };
 
 export const STORAGE_KEYS = {
   workflow: "ambria-cal-workflow-v2",

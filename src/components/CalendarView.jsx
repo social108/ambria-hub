@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { PAGES, ACTION_TYPES, MONTHS_FULL, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
 import { EVENTS } from "../lib/events.js";
-import { daysUntil, formatDate } from "../lib/helpers.js";
+import { daysUntil, formatDate, validateEventForm, isPastDate } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -94,7 +94,11 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   };
 
   const handleSave = () => {
-    if (!form.name || !form.date) return;
+    const missing = validateEventForm(form);
+    if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
+    if (modal.mode === "add" && isPastDate(form.date)) {
+      alert("You can't add an event for a past date."); return;
+    }
     if (modal.mode === "add") {
       addEvent(form);
     } else if (modal.mode === "edit") {
@@ -387,12 +391,14 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   <div>
                     <FieldLabel>Category</FieldLabel>
                     <select value={form.cat} onChange={e => setForm(f => ({...f, cat: e.target.value}))} style={inputStyle}>
+                      <option value="">-- Select Category --</option>
                       {CAT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
                     <FieldLabel>Priority</FieldLabel>
-                    <select value={form.priority} onChange={e => setForm(f => ({...f, priority: parseInt(e.target.value)}))} style={inputStyle}>
+                    <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value === "" ? "" : parseInt(e.target.value)}))} style={inputStyle}>
+                      <option value="">-- Select Priority --</option>
                       <option value={0}>Low</option>
                       <option value={1}>Medium</option>
                       <option value={2}>High</option>
@@ -401,7 +407,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   </div>
                   <div>
                     <FieldLabel>Ad Lead Days</FieldLabel>
-                    <input type="number" value={form.adLeadDays} onChange={e => setForm(f => ({...f, adLeadDays: parseInt(e.target.value) || 0}))} style={inputStyle} />
+                    <input type="number" value={form.adLeadDays} onChange={e => setForm(f => ({...f, adLeadDays: e.target.value === "" ? "" : (parseInt(e.target.value) || 0)}))} style={inputStyle} />
                   </div>
                 </div>
 

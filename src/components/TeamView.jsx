@@ -73,7 +73,7 @@ function TeamMembersEditor({ members, onChange }) {
 
 function DepartmentAccountModal({ mode, member, onClose, onSubmit, mob }) {
   const isCreate = mode === "create";
-  const [department, setDepartment] = useState(member?.department || (isCreate ? DEPARTMENT_OPTIONS[0] : ""));
+  const [department, setDepartment] = useState(member?.department || "");
   const [email, setEmail] = useState(member?.email || "");
   const [password, setPassword] = useState("");
   const [teamMembers, setTeamMembers] = useState(Array.isArray(member?.team_members) ? member.team_members : []);
@@ -83,12 +83,12 @@ function DepartmentAccountModal({ mode, member, onClose, onSubmit, mob }) {
   const submit = async () => {
     setError("");
     if (isCreate) {
-      if (!department) { setError("Pick a department"); return; }
+      if (!department) { setError("Please fill required fields : Department"); return; }
       if (!email.trim()) { setError("Email is required"); return; }
       if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
       if (teamMembers.length === 0) { setError("Add at least one team member"); return; }
     } else {
-      if (!department) { setError("Pick a department"); return; }
+      if (!department) { setError("Please fill required fields : Department"); return; }
     }
     setBusy(true);
     try {
@@ -131,6 +131,7 @@ function DepartmentAccountModal({ mode, member, onClose, onSubmit, mob }) {
         <div style={{ marginBottom: 14 }}>
           <div style={labelStyle}>Department</div>
           <select value={department} onChange={e => setDepartment(e.target.value)} style={inputStyle}>
+            <option value="">-- Select Department --</option>
             {DEPARTMENT_OPTIONS.map(d => (
               <option key={d} value={d}>{DEPARTMENTS[d].label}</option>
             ))}

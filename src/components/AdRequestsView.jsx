@@ -30,7 +30,7 @@ function normalizeStatus(s) {
 export default function AdRequestsView({ data, workflowData, addAdRequest, updateAdRequest, deleteAdRequest, refetchWorkflow, role }) {
   const { user, department } = useAuth();
   const canCreate = role === "admin" || role === "creative" || role === "venue_manager";
-  const canDecide = role === "admin" || role === "creative";
+  const canDecide = role === "admin";
   const canDelete = role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
@@ -68,7 +68,13 @@ export default function AdRequestsView({ data, workflowData, addAdRequest, updat
   }, [data.adRequests, workflowData]);
 
   const handleSubmit = () => {
-    if (!form.eventName || form.pages.length === 0) return;
+    const missing = [];
+    if (!form.eventName.trim()) missing.push("event/campaign name");
+    if (!form.startDate) missing.push("ad start date");
+    if (!form.endDate) missing.push("ad end date");
+    if (!form.requestedBy) missing.push("requested by");
+    if (form.pages.length === 0) missing.push("run ad on pages");
+    if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
     addAdRequest({ ...form, createdBy: user?.id, department });
     setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
     setShowForm(false);

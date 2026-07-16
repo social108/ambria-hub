@@ -71,6 +71,27 @@ export function getAdWorkflowSummary(adRequestId, workflowData) {
   return { counts, total, done, inProgress };
 }
 
+// Returns a list of missing required field labels for the event add/edit form.
+// Category/Priority/Ad Lead Days must be explicitly chosen — an empty string
+// means the user never touched the field.
+export function validateEventForm(form) {
+  const missing = [];
+  if (!form.name?.trim()) missing.push("Event Name");
+  if (!form.date) missing.push("Date");
+  if (!form.cat) missing.push("Category");
+  if (form.priority === "" || form.priority === null || form.priority === undefined) missing.push("Priority");
+  if (form.adLeadDays === "" || form.adLeadDays === null || form.adLeadDays === undefined) missing.push("Ad Lead Days");
+  if (!form.actions?.length) missing.push("Actions");
+  if (!form.pages?.length) missing.push("Post on Pages");
+  return missing;
+}
+
+export function isPastDate(dateStr) {
+  const d = new Date(dateStr); d.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return d < today;
+}
+
 export function loadData(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }

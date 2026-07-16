@@ -86,12 +86,6 @@ export function validateEventForm(form) {
   return missing;
 }
 
-export function isPastDate(dateStr) {
-  const d = new Date(dateStr); d.setHours(0, 0, 0, 0);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return d < today;
-}
-
 export function loadData(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { PAGES, ACTION_TYPES, MONTHS_FULL, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
 import { EVENTS } from "../lib/events.js";
-import { daysUntil, formatDate, validateEventForm, isPastDate } from "../lib/helpers.js";
+import { daysUntil, formatDate, validateEventForm } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -12,6 +12,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   const canEdit = role === "admin" || role === "creative";
   const canDelete = role === "admin";
   const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -96,9 +97,6 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   const handleSave = () => {
     const missing = validateEventForm(form);
     if (missing.length) { alert(`Please fill required fields : ${missing.join(", ")}`); return; }
-    if (modal.mode === "add" && isPastDate(form.date)) {
-      alert("You can't add an event for a past date."); return;
-    }
     if (modal.mode === "add") {
       addEvent(form);
     } else if (modal.mode === "edit") {
@@ -386,7 +384,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   </div>
                   <div>
                     <FieldLabel>Date</FieldLabel>
-                    <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
+                    <input type="date" value={form.date} min={modal.mode === "add" ? todayStr : undefined} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
                   </div>
                   <div>
                     <FieldLabel>Category</FieldLabel>

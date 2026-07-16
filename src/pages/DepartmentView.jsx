@@ -143,14 +143,17 @@ export default function DepartmentView() {
           )}
         </div>
 
-        {/* New request button */}
-        <button onClick={() => { setShowForm(s => !s); setSubmitError(""); }} style={{
-          padding: "12px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "#1a1a1a", color: "#fff", fontSize: 14, fontWeight: 700,
-          marginBottom: 18, ...(mob ? { width: "100%" } : {}),
-        }}>
-          {showForm ? "× Close" : "+ New Ad Request"}
-        </button>
+        {/* New request button — hidden while the form is open since its own
+            Cancel button already closes it; no need for a second close action. */}
+        {!showForm && (
+          <button onClick={() => { setShowForm(true); setSubmitError(""); }} style={{
+            padding: "12px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "#1a1a1a", color: "#fff", fontSize: 14, fontWeight: 700,
+            marginBottom: 18, ...(mob ? { width: "100%" } : {}),
+          }}>
+            + New Ad Request
+          </button>
+        )}
 
         {/* Form */}
         {showForm && (

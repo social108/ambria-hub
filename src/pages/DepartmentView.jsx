@@ -8,6 +8,7 @@ import useRealtimeSync from "../hooks/useRealtimeSync.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 import Chip from "../components/shared/Chip.jsx";
 import InputField from "../components/shared/InputField.jsx";
+import FieldError from "../components/shared/FieldError.jsx";
 import EmptyState from "../components/shared/EmptyState.jsx";
 import AdWorkflowProgress from "../components/shared/AdWorkflowProgress.jsx";
 import logo from "../assets/logo.png";
@@ -27,7 +28,7 @@ export default function DepartmentView() {
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
   const [form, setForm] = useState({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
-  const [submitError, setSubmitError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const { adRequests, addAdRequest, loading, refetch } = useAdRequests({ ownerId: user?.id });
 
@@ -71,8 +72,18 @@ export default function DepartmentView() {
     return adRequests.filter(a => normalizeStatus(a.status) === statusFilter);
   }, [adRequests, statusFilter]);
 
+  const setField = (patch) => {
+    setForm(f => ({ ...f, ...patch }));
+    setErrors(e => {
+      const next = { ...e };
+      Object.keys(patch).forEach(k => delete next[k]);
+      return next;
+    });
+  };
+
   const togglePage = (pid) => {
     setForm(f => ({ ...f, pages: f.pages.includes(pid) ? f.pages.filter(p => p !== pid) : [...f.pages, pid] }));
+    setErrors(e => ({ ...e, pages: undefined }));
   };
 
   const handleLogout = async () => {
@@ -81,16 +92,20 @@ export default function DepartmentView() {
   };
 
   const handleSubmit = async () => {
-    setSubmitError("");
-    if (!form.eventName.trim()) { setSubmitError("Campaign name is required"); return; }
-    if (form.pages.length === 0) { setSubmitError("Select at least one page"); return; }
-    if (!form.requestedBy) { setSubmitError("Pick who is requesting this"); return; }
+    const fieldErrors = {};
+    if (!form.eventName.trim()) fieldErrors.eventName = "Campaign name is required";
+    if (!form.startDate) fieldErrors.startDate = "Ad start date is required";
+    if (!form.endDate) fieldErrors.endDate = "Ad end date is required";
+    if (!form.requestedBy) fieldErrors.requestedBy = "Pick who is requesting this";
+    if (form.pages.length === 0) fieldErrors.pages = "Select at least one page";
+    if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
     await addAdRequest({
       ...form,
       createdBy: user?.id,
       department,
     });
     setForm({ eventName: "", pages: [], startDate: "", endDate: "", brief: "", requestedBy: "" });
+    setErrors({});
     setShowForm(false);
   };
 
@@ -146,7 +161,7 @@ export default function DepartmentView() {
         {/* New request button — hidden while the form is open since its own
             Cancel button already closes it; no need for a second close action. */}
         {!showForm && (
-          <button onClick={() => { setShowForm(true); setSubmitError(""); }} style={{
+          <button onClick={() => { setShowForm(true); setErrors({}); }} style={{
             padding: "12px 20px", borderRadius: 10, border: "none", cursor: "pointer",
             background: "#1a1a1a", color: "#fff", fontSize: 14, fontWeight: 700,
             marginBottom: 18, ...(mob ? { width: "100%" } : {}),
@@ -160,17 +175,17 @@ export default function DepartmentView() {
           <div style={{ background: "#f8f8f6", border: "1px solid #e5e5e0", borderRadius: 14, padding: mob ? 16 : 22, marginBottom: 22, animation: "deptFadeSlide 0.2s ease" }}>
             <div style={{ fontFamily: "'Sora'", fontSize: 16, fontWeight: 700, marginBottom: 14 }}>New Ad Request</div>
             <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setForm(f => ({ ...f, eventName: v }))} placeholder="e.g. Summer Pool Party" />
-              <InputField label="Ad Start Date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} type="date" />
-              <InputField label="Ad End Date" value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} type="date" />
+              <InputField label="Event / Campaign Name" value={form.eventName} onChange={v => setField({ eventName: v })} placeholder="e.g. Summer Pool Party" error={errors.eventName} />
+              <InputField label="Ad Start Date" value={form.startDate} onChange={v => setField({ startDate: v })} type="date" error={errors.startDate} />
+              <InputField label="Ad End Date" value={form.endDate} onChange={v => setField({ endDate: v })} type="date" error={errors.endDate} />
               <div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Requested By</div>
                 <select
                   value={form.requestedBy}
-                  onChange={e => setForm(f => ({ ...f, requestedBy: e.target.value }))}
+                  onChange={e => setField({ requestedBy: e.target.value })}
                   style={{
                     width: "100%", padding: "9px 12px", background: "#f5f4f1",
-                    border: "1px solid #e5e5e0", borderRadius: 10,
+                    border: `1px solid ${errors.requestedBy ? "#dc2626" : "#e5e5e0"}`, borderRadius: 10,
                     color: "#1a1a1a", fontSize: 13, minHeight: 44,
                     boxSizing: "border-box", cursor: "pointer",
                   }}
@@ -180,6 +195,7 @@ export default function DepartmentView() {
                     <option key={name} value={name}>{name}</option>
                   ))}
                 </select>
+                <FieldError>{errors.requestedBy}</FieldError>
                 {(!teamMembers || teamMembers.length === 0) && (
                   <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
                     No team members on file — ask admin to add them.
@@ -191,7 +207,7 @@ export default function DepartmentView() {
               <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Run Ad On Pages</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {(() => { const adIds = PAGES.filter(p => !p.noAds).map(p => p.id); const allSel = adIds.every(id => form.pages.includes(id)); return (
-                  <button onClick={() => setForm(f => ({ ...f, pages: allSel ? [] : adIds }))} style={{
+                  <button onClick={() => { setForm(f => ({ ...f, pages: allSel ? [] : adIds })); setErrors(e => ({ ...e, pages: undefined })); }} style={{
                     padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
                     border: allSel ? "1px solid #1a1a1a" : "1px solid #e5e5e0",
                     background: allSel ? "#1a1a1a" : "#ffffff",
@@ -208,6 +224,7 @@ export default function DepartmentView() {
                   }}>{pg.name}</button>
                 ))}
               </div>
+              <FieldError>{errors.pages}</FieldError>
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Brief / Notes</div>
@@ -219,16 +236,13 @@ export default function DepartmentView() {
                 style={{ width: "100%", minHeight: 80, background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 8, padding: 12, fontSize: 13, resize: "vertical" }}
               />
             </div>
-            {submitError && (
-              <div style={{ marginBottom: 12, fontSize: 12, color: "#dc2626" }}>{submitError}</div>
-            )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button onClick={handleSubmit} style={{
                 padding: "10px 24px", borderRadius: 8, border: "none",
                 background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
                 ...(mob ? { flex: 1 } : {}),
               }}>Submit Request</button>
-              <button onClick={() => setShowForm(false)} style={{
+              <button onClick={() => { setShowForm(false); setErrors({}); }} style={{
                 padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e5e0",
                 background: "transparent", color: "#6b7280", fontSize: 13, cursor: "pointer",
                 ...(mob ? { flex: 1 } : {}),

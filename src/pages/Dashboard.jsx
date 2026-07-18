@@ -26,6 +26,11 @@ const roleBadgeColors = {
 export default function Dashboard() {
   const { user, role, signOut } = useAuth();
   const [tab, setTab] = useState("reminders");
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set(["reminders"]));
+  const goToTab = useCallback((id) => {
+    setTab(id);
+    setVisitedTabs(prev => prev.has(id) ? prev : new Set(prev).add(id));
+  }, []);
   const [loggingOut, setLoggingOut] = useState(false);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [syncError, setSyncError] = useState(null);
@@ -275,7 +280,7 @@ export default function Dashboard() {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => { setTab(t.id); setDrawerOpen(false); }}
+                    onClick={() => { goToTab(t.id); setDrawerOpen(false); }}
                     style={{
                       display: "flex", alignItems: "center", gap: 14,
                       width: "100%", padding: "14px 24px",
@@ -347,7 +352,7 @@ export default function Dashboard() {
             paddingTop: 6, paddingBottom: 6, paddingRight: 6,
           }}>
             {navTabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
+              <button key={t.id} onClick={() => goToTab(t.id)} style={{
                 padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer",
                 fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
                 background: tab === t.id ? "rgba(0,0,0,0.06)" : "transparent",
@@ -465,14 +470,16 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* CONTENT */}
+      {/* CONTENT — every visited tab stays mounted (hidden via display:none)
+          instead of unmounting, so each view's own filters/scroll/selection
+          state survive switching tabs and back. */}
       <div style={{ padding: mob ? "12px 10px" : "20px 24px", maxWidth: 1400, margin: "0 auto" }}>
-        {tab === "reminders" && <RemindersView allEvents={allEvents} data={data} workflowData={workflowData} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={setTab} role={role} />}
-        {tab === "calendar" && <CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} role={role} />}
-        {tab === "workflow" && <WorkflowView data={data} updateWorkflow={updateWorkflow} updateWorkflowEvent={updateWorkflowEvent} allEvents={allEvents} role={role} />}
-        {tab === "ads" && <AdRequestsView data={data} workflowData={workflowData} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} refetchWorkflow={refetchWorkflow} role={role} />}
-        {tab === "pages" && <PagesView allEvents={allEvents} role={role} />}
-        {tab === "team" && role === "admin" && <TeamView />}
+        {visitedTabs.has("reminders") && <div style={{ display: tab === "reminders" ? "block" : "none" }}><RemindersView allEvents={allEvents} data={data} workflowData={workflowData} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} setTab={goToTab} role={role} /></div>}
+        {visitedTabs.has("calendar") && <div style={{ display: tab === "calendar" ? "block" : "none" }}><CalendarView allEvents={allEvents} data={data} updateWorkflow={updateWorkflow} addEvent={addEvent} updateEvent={updateEvent} deleteEvent={deleteEvent} resetBuiltin={resetBuiltin} restoreBuiltin={restoreBuiltin} hiddenCount={hiddenCount} hiddenBuiltins={hiddenBuiltins} role={role} /></div>}
+        {visitedTabs.has("workflow") && <div style={{ display: tab === "workflow" ? "block" : "none" }}><WorkflowView data={data} updateWorkflow={updateWorkflow} updateWorkflowEvent={updateWorkflowEvent} allEvents={allEvents} role={role} /></div>}
+        {visitedTabs.has("ads") && <div style={{ display: tab === "ads" ? "block" : "none" }}><AdRequestsView data={data} workflowData={workflowData} addAdRequest={addAdRequest} updateAdRequest={updateAdRequest} deleteAdRequest={deleteAdRequest} refetchWorkflow={refetchWorkflow} role={role} /></div>}
+        {visitedTabs.has("pages") && <div style={{ display: tab === "pages" ? "block" : "none" }}><PagesView allEvents={allEvents} role={role} /></div>}
+        {role === "admin" && visitedTabs.has("team") && <div style={{ display: tab === "team" ? "block" : "none" }}><TeamView /></div>}
       </div>
     </div>
   );

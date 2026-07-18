@@ -108,7 +108,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   };
 
   const handleSave = () => {
-    const fieldErrors = validateEventForm(form);
+    const fieldErrors = validateEventForm(form, modal.mode === "add" ? todayStr : undefined);
     if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); return; }
     if (modal.mode === "add") {
       addEvent(form);
@@ -268,7 +268,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
               onClick={() => !cell.outside && openView(dateStr)}
             >
               <div className={`cal-day-num ${todayCell ? "today-num" : ""}`}>{cell.day}</div>
-              {!cell.outside && !mob && canEdit && (
+              {!cell.outside && !mob && canEdit && dateStr >= todayStr && (
                 <button className="cal-add-btn" onClick={(ev) => { ev.stopPropagation(); openAdd(dateStr); }}>+</button>
               )}
               {evts.slice(0, maxVisible).map((evt, ei) => {
@@ -304,7 +304,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
             <div style={{ fontFamily: "'Sora'", fontSize: mob ? 14 : 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)} — {eventsByDate[selectedDate].length} event{eventsByDate[selectedDate].length > 1 ? "s" : ""}
             </div>
-            {canEdit && <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>}
+            {canEdit && selectedDate >= todayStr && <button onClick={() => openAdd(selectedDate)} style={{ background: "rgba(26,26,26,0.06)", border: "1px solid #e5e5e0", borderRadius: 8, padding: "4px 12px", color: "#1a1a1a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Add</button>}
           </div>
           {eventsByDate[selectedDate].map((evt, i) => {
             const priorityColors = ["#78909C","#FFB300","#F4511E","#D50000"];

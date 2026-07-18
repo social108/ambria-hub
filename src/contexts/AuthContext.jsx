@@ -20,16 +20,31 @@ export function AuthProvider({ children }) {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // The profiles query can transiently fail right after sign-in (the fresh
+  // session's JWT hasn't always propagated to PostgREST/RLS yet), which would
+  // otherwise read as "no profile" and flash Access Denied before a retry
+  // corrects it. Retry a few times before accepting that as the real answer.
   const fetchProfile = useCallback(async (userId) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("role, department, team_members")
-      .eq("id", userId)
-      .single();
-    const dept = data?.department || null;
-    setDepartment(dept);
-    setRole(deriveRole(dept, data?.role));
-    setTeamMembers(Array.isArray(data?.team_members) ? data.team_members : []);
+    let lastError = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role, department, team_members")
+        .eq("id", userId)
+        .single();
+      if (!error && data) {
+        setDepartment(data.department || null);
+        setRole(deriveRole(data.department, data.role));
+        setTeamMembers(Array.isArray(data.team_members) ? data.team_members : []);
+        return;
+      }
+      lastError = error;
+      if (attempt < 3) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+    }
+    console.error("fetchProfile failed after retries:", lastError);
+    setDepartment(null);
+    setRole(null);
+    setTeamMembers([]);
   }, []);
 
   useEffect(() => {

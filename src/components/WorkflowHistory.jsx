@@ -4,12 +4,17 @@ import { formatDate } from "../lib/helpers.js";
 import useIsMobile from "../hooks/useIsMobile.js";
 
 // FY runs April → March. Months are indexed 0=Jan..11=Dec.
-const FY_MONTHS = [
-  { y: 2026, m: 3 }, { y: 2026, m: 4 }, { y: 2026, m: 5 },
-  { y: 2026, m: 6 }, { y: 2026, m: 7 }, { y: 2026, m: 8 },
-  { y: 2026, m: 9 }, { y: 2026, m: 10 }, { y: 2026, m: 11 },
-  { y: 2027, m: 0 }, { y: 2027, m: 1 }, { y: 2027, m: 2 },
-];
+// getFYMonths(startYear) builds the 12 { y, m } entries for the fiscal year
+// that starts in April of startYear, so users can page between fiscal years
+// instead of being stuck on whichever one is hardcoded.
+const getFYMonths = (startYear) => {
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    const m = (3 + i) % 12;
+    months.push({ y: m >= 3 ? startYear : startYear + 1, m });
+  }
+  return months;
+};
 
 const COMPLETED_STATUSES = ["posted", "ad_live", "completed", "done"];
 
@@ -23,10 +28,11 @@ export default function WorkflowHistory({ data, allEvents }) {
   const mob = useIsMobile();
 
   const today = new Date();
-  const defaultKey = (() => {
-    const fyMatch = FY_MONTHS.find(({ y, m }) => y === today.getFullYear() && m === today.getMonth());
-    return fyMatch ? monthKey(fyMatch.y, fyMatch.m) : monthKey(FY_MONTHS[0].y, FY_MONTHS[0].m);
-  })();
+  const defaultFYStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const defaultKey = monthKey(today.getFullYear(), today.getMonth());
+
+  const [fyStartYear, setFyStartYear] = useState(defaultFYStartYear);
+  const FY_MONTHS = useMemo(() => getFYMonths(fyStartYear), [fyStartYear]);
 
   const [selectedMonths, setSelectedMonths] = useState(new Set([defaultKey]));
   const [detailEvent, setDetailEvent] = useState(null);
@@ -37,6 +43,12 @@ export default function WorkflowHistory({ data, allEvents }) {
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+  };
+
+  const changeFY = (dir) => {
+    const nextStartYear = fyStartYear + dir;
+    setFyStartYear(nextStartYear);
+    setSelectedMonths(new Set(getFYMonths(nextStartYear).map(({ y, m }) => monthKey(y, m))));
   };
 
   const fyLabel = `FY ${FY_MONTHS[0].y}-${String(FY_MONTHS[FY_MONTHS.length - 1].y).slice(-2)}`;
@@ -298,6 +310,23 @@ export default function WorkflowHistory({ data, allEvents }) {
         }
       `}</style>
 
+      {/* Fiscal year switcher */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <button
+          onClick={() => changeFY(-1)}
+          aria-label="Previous fiscal year"
+          style={{ background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "5px 12px", color: "#6b7280", fontSize: 15, fontWeight: 600, cursor: "pointer" }}
+        >‹</button>
+        <div style={{ fontFamily: "'Sora'", fontSize: mob ? 14 : 16, fontWeight: 700, color: "#1a1a1a", minWidth: 90, textAlign: "center" }}>
+          {fyLabel}
+        </div>
+        <button
+          onClick={() => changeFY(1)}
+          aria-label="Next fiscal year"
+          style={{ background: "#f3f2ef", border: "1px solid #e5e5e0", borderRadius: 8, padding: "5px 12px", color: "#6b7280", fontSize: 15, fontWeight: 600, cursor: "pointer" }}
+        >›</button>
+      </div>
+
       {/* Month selector */}
       <div className="hist-toggle-row">
         <button
@@ -305,7 +334,7 @@ export default function WorkflowHistory({ data, allEvents }) {
           style={{ fontWeight: 800 }}
           onClick={toggleYear}
         >
-          {fyLabel} {allYearActive ? "✓" : ""}
+          Full Year {allYearActive ? "✓" : ""}
         </button>
         {FY_MONTHS.map(({ y, m }) => {
           const key = monthKey(y, m);

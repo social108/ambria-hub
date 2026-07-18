@@ -207,19 +207,11 @@ export default function Dashboard() {
           </button>
 
           {/* Center: logo + title */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
               <img src={logo} alt="Ambria" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
             <span style={{ fontFamily: "'Sora'", fontWeight: 700, fontSize: 13, color: "#1a1a1a", letterSpacing: 1 }}>SMO CALENDAR</span>
-            {urgentCount > 0 && (
-              <span style={{
-                position: "absolute", top: -6, right: -18,
-                background: "#EF5350", color: "#fff", fontSize: 9, fontWeight: 800,
-                borderRadius: "50%", width: 18, height: 18,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{urgentCount > 9 ? "9+" : urgentCount}</span>
-            )}
           </div>
 
           {/* Logout */}

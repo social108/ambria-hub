@@ -76,6 +76,14 @@ export function getAdWorkflowSummary(adRequestId, workflowData) {
 // and Ad Lead Days are intentionally optional (per SMO Head) — only Name,
 // Date, Priority, Actions and Pages are required. Pass todayStr to also block
 // past dates (used for "add" mode only; editing existing past events is fine).
+// True when API Campaign is the only action selected. Such events target
+// business units instead of Instagram pages, so the Post on Pages picker is
+// hidden and not required.
+export function isApiCampaignOnly(form) {
+  const actions = form?.actions || [];
+  return actions.length > 0 && actions.every(a => a === "api_campaign");
+}
+
 export function validateEventForm(form, todayStr) {
   const errors = {};
   if (!form.name?.trim()) errors.name = "Event Name is required";
@@ -83,7 +91,10 @@ export function validateEventForm(form, todayStr) {
   else if (todayStr && form.date < todayStr) errors.date = "Cannot create events for past dates";
   if (form.priority === "" || form.priority === null || form.priority === undefined) errors.priority = "Please select a priority";
   if (!form.actions?.length) errors.actions = "Select at least one action";
-  if (!form.pages?.length) errors.pages = "Select at least one page";
+  // An API Campaign goes out to business units, not Instagram pages — when it's
+  // the only action the Post on Pages picker is hidden, so don't require it.
+  if (!isApiCampaignOnly(form) && !form.pages?.length) errors.pages = "Select at least one page";
+  if (form.actions?.includes("api_campaign") && !form.apiCampaigns?.length) errors.apiCampaigns = "Select at least one campaign target";
   return errors;
 }
 

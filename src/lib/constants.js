@@ -18,7 +18,23 @@ export const ACTION_TYPES = {
   host: { label: "Host Event", icon: "★", color: "#AD1457", bg: "#FCE4EC" },
   restaurant: { label: "Restaurant Special", icon: "◆", color: "#4527A0", bg: "#EDE7F6" },
   reel: { label: "Reel / Video", icon: "▶", color: "#00695C", bg: "#E0F7FA" },
+  api_campaign: { label: "API Campaign", icon: "⚑", color: "#1565C0", bg: "#E3F2FD" },
 };
+
+// Sub-targets shown when the "API Campaign" action is selected on an event.
+// These are business units / outlets, not Instagram pages — deliberately a
+// separate list from PAGES.
+export const API_CAMPAIGN_TARGETS = [
+  { id: "pushpanjali", name: "Pushpanjali" },
+  { id: "manaktala", name: "Manaktala" },
+  { id: "exotica", name: "Exotica" },
+  { id: "catering", name: "Catering" },
+  { id: "decor", name: "Decor" },
+  { id: "corporate", name: "Corporate" },
+  { id: "restaurant_palam", name: "Restaurant Palam" },
+  { id: "restaurant_janakpuri", name: "Restaurant Janakpuri" },
+  { id: "gyv", name: "GYV" },
+];
 
 export const WORKFLOW_STATUS = {
   pending: { label: "Pending", color: "#78909C", bg: "rgba(120,144,156,0.12)" },
@@ -80,7 +96,7 @@ export const DEPARTMENTS = {
 // Admin is intentionally excluded — admins are bootstrapped manually.
 export const DEPARTMENT_OPTIONS = ["creative", "venue", "catering", "decor", "entertainment"];
 
-export const EMPTY_FORM = { name: "", date: "", cat: "", actions: [], pages: [], priority: "", adLeadDays: "", note: "" };
+export const EMPTY_FORM = { name: "", date: "", cat: "", actions: [], pages: [], apiCampaigns: [], priority: "", adLeadDays: "", note: "" };
 
 export const STORAGE_KEYS = {
   workflow: "ambria-cal-workflow-v2",

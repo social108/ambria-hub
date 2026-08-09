@@ -2,6 +2,21 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient.js";
 import { EVENTS } from "../lib/events.js";
 
+// The api_campaigns column was added after the original schema. If a deployment
+// hasn't run supabase/sql/api_campaigns.sql yet we retry without the field so
+// saving an event still works, and tell the user why their campaign targets
+// vanished. Two different codes mean the same thing here: PostgREST rejects
+// writes with PGRST204 from its schema cache, while Postgres itself reports
+// 42703 (undefined_column) on reads.
+const isMissingApiCampaignsColumn = (error) =>
+  (error?.code === "PGRST204" || error?.code === "42703") &&
+  /api_campaigns/.test(error?.message || "");
+
+const warnMissingApiCampaignsColumn = (onSyncError) => {
+  console.error("custom_events.api_campaigns is missing — run supabase/sql/api_campaigns.sql");
+  onSyncError?.("API Campaign targets not saved — database migration pending");
+};
+
 export default function useEvents({ onSyncError } = {}) {
   const [customEvents, setCustomEvents] = useState([]);
   const [builtinOverrides, setBuiltinOverrides] = useState({}); // { [id]: { overrides, hidden } }
@@ -39,6 +54,7 @@ export default function useEvents({ onSyncError } = {}) {
         cat: row.cat,
         actions: row.actions || [],
         pages: row.pages || [],
+        apiCampaigns: row.api_campaigns || [],
         priority: row.priority,
         adLeadDays: row.ad_lead_days,
         note: row.note,
@@ -94,15 +110,22 @@ export default function useEvents({ onSyncError } = {}) {
       cat: evt.cat,
       actions: evt.actions || [],
       pages: evt.pages || [],
+      api_campaigns: evt.apiCampaigns || [],
       priority: evt.priority ?? 2,
       ad_lead_days: evt.adLeadDays || 15,
       note: evt.note || "",
     };
-    const { error } = await supabase.from("custom_events").insert(row);
+    let { error } = await supabase.from("custom_events").insert(row);
+    if (isMissingApiCampaignsColumn(error)) {
+      warnMissingApiCampaignsColumn(onSyncError);
+      const { api_campaigns, ...fallback } = row;
+      ({ error } = await supabase.from("custom_events").insert(fallback));
+    }
     if (error) { console.error("addEvent error:", error); onSyncError?.("Sync error — retrying..."); return; }
     setCustomEvents(prev => [...prev, {
       id: newId, name: evt.name, date: evt.date, cat: evt.cat,
       actions: evt.actions || [], pages: evt.pages || [],
+      apiCampaigns: evt.apiCampaigns || [],
       priority: evt.priority ?? 2, adLeadDays: evt.adLeadDays || 15,
       note: evt.note || "", custom: true,
     }]);
@@ -130,10 +153,16 @@ export default function useEvents({ onSyncError } = {}) {
       if (updates.cat !== undefined) row.cat = updates.cat;
       if (updates.actions !== undefined) row.actions = updates.actions;
       if (updates.pages !== undefined) row.pages = updates.pages;
+      if (updates.apiCampaigns !== undefined) row.api_campaigns = updates.apiCampaigns;
       if (updates.priority !== undefined) row.priority = updates.priority;
       if (updates.adLeadDays !== undefined) row.ad_lead_days = updates.adLeadDays;
       if (updates.note !== undefined) row.note = updates.note;
-      const { error } = await supabase.from("custom_events").update(row).eq("id", id);
+      let { error } = await supabase.from("custom_events").update(row).eq("id", id);
+      if (isMissingApiCampaignsColumn(error)) {
+        warnMissingApiCampaignsColumn(onSyncError);
+        const { api_campaigns, ...fallback } = row;
+        ({ error } = await supabase.from("custom_events").update(fallback).eq("id", id));
+      }
       if (error) { console.error("updateEvent custom error:", error); onSyncError?.("Sync error — retrying..."); return; }
       setCustomEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
     }

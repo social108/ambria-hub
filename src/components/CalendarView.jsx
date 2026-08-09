@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
-import { PAGES, ACTION_TYPES, MONTHS_FULL, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
+import { PAGES, ACTION_TYPES, API_CAMPAIGN_TARGETS, MONTHS_FULL, CAT_OPTIONS, EMPTY_FORM } from "../lib/constants.js";
 import { EVENTS } from "../lib/events.js";
-import { daysUntil, formatDate, validateEventForm } from "../lib/helpers.js";
+import { daysUntil, formatDate, validateEventForm, isApiCampaignOnly } from "../lib/helpers.js";
 import FieldLabel from "./shared/FieldLabel.jsx";
 import FieldError from "./shared/FieldError.jsx";
 import MiniChip from "./shared/MiniChip.jsx";
+import ApiCampaignPicker from "./shared/ApiCampaignPicker.jsx";
 import useIsMobile from "../hooks/useIsMobile.js";
 
 const inputStyle = { width: "100%", padding: "9px 12px", background: "#f5f4f1", border: "1px solid #e5e5e0", borderRadius: 10, color: "#1a1a1a", fontSize: 13 };
@@ -88,6 +89,7 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
     setForm({
       name: evt.name, date: evt.date, cat: evt.cat || "Custom",
       actions: [...(evt.actions || [])], pages: [...(evt.pages || [])],
+      apiCampaigns: [...(evt.apiCampaigns || [])],
       priority: evt.priority ?? 2, adLeadDays: evt.adLeadDays || 15, note: evt.note || "",
     });
     setErrors({});
@@ -138,8 +140,20 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
   };
 
   const toggleFormAction = (a) => {
-    setForm(f => ({ ...f, actions: f.actions.includes(a) ? f.actions.filter(x => x !== a) : [...f.actions, a] }));
-    setErrors(e => ({ ...e, actions: undefined }));
+    setForm(f => {
+      const on = f.actions.includes(a);
+      const actions = on ? f.actions.filter(x => x !== a) : [...f.actions, a];
+      // Turning off API Campaign drops its targets so we never save orphans.
+      const apiCampaigns = a === "api_campaign" && on ? [] : f.apiCampaigns;
+      // API Campaign on its own hides Post on Pages — clear any pages picked
+      // earlier so nothing invisible gets saved.
+      const pages = isApiCampaignOnly({ actions }) ? [] : f.pages;
+      return { ...f, actions, apiCampaigns, pages };
+    });
+    setErrors(e => ({ ...e, actions: undefined, pages: undefined }));
+  };
+  const toggleApiCampaign = (t) => {
+    setForm(f => ({ ...f, apiCampaigns: (f.apiCampaigns || []).includes(t) ? f.apiCampaigns.filter(x => x !== t) : [...(f.apiCampaigns || []), t] }));
   };
   const toggleFormPage = (p) => {
     setForm(f => ({ ...f, pages: f.pages.includes(p) ? f.pages.filter(x => x !== p) : [...f.pages, p] }));
@@ -337,6 +351,15 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                     })}
                   </div>
                 )}
+                {(evt.apiCampaigns || []).length > 0 && (
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6, alignItems: "center" }}>
+                    <span style={{ fontSize: 9, color: "#9ca3af", fontWeight: 600 }}>{ACTION_TYPES.api_campaign.icon} Campaign:</span>
+                    {evt.apiCampaigns.map(tid => {
+                      const t = API_CAMPAIGN_TARGETS.find(x => x.id === tid);
+                      return t ? <span key={tid} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${ACTION_TYPES.api_campaign.color}15`, color: ACTION_TYPES.api_campaign.color, fontWeight: 600 }}>{t.name}</span> : null;
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -449,7 +472,16 @@ export default function CalendarView({ allEvents, data, updateWorkflow, addEvent
                   <FieldError>{errors.actions}</FieldError>
                 </div>
 
-                <div style={{ marginBottom: 14 }}>
+                {form.actions.includes("api_campaign") && (
+                  <ApiCampaignPicker
+                    selected={form.apiCampaigns || []}
+                    onToggle={toggleApiCampaign}
+                    onSetAll={(ids) => { setForm(f => ({ ...f, apiCampaigns: ids })); setErrors(e => ({ ...e, apiCampaigns: undefined })); }}
+                    error={errors.apiCampaigns}
+                  />
+                )}
+
+                <div style={{ marginBottom: 14, display: isApiCampaignOnly(form) ? "none" : "block" }}>
                   <FieldLabel>Post on Pages</FieldLabel>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {(() => { const allIds = PAGES.map(p => p.id); const allSel = allIds.every(id => form.pages.includes(id)); return (

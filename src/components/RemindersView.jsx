@@ -24,6 +24,8 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
   const reminders = useMemo(() => {
     const list = [];
     const today = new Date(); today.setHours(0,0,0,0);
+    const pad = n => String(n).padStart(2, "0");
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
     const wf = workflowData || {};
 
     // True when every assigned page has reached a done workflow status — used
@@ -49,6 +51,11 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         const rDays = daysUntil(rDate);
         list.push({
           type: "story_reminder", event: evt, date: rDate, daysUntil: rDays, eventDate: evt.date,
+          // Story prep is a WINDOW, not a deadline: it opens 7 days before the
+          // event and stays actionable right up to the event itself. Urgency is
+          // judged against dueDate (the event), never the window-open date —
+          // otherwise the reminder reads OVERDUE the day the window opens.
+          dueDate: evt.date, dueDays: eventDays, windowStart: rDate,
           message: `Prepare stories for "${evt.name}" across ${(evt.pages || []).length} pages`,
         });
       }
@@ -58,6 +65,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         const cDays = daysUntil(cDate);
         list.push({
           type: "creative_deadline", event: evt, date: cDate, daysUntil: cDays, eventDate: evt.date,
+          dueDate: cDate, dueDays: cDays,
           message: `Creative team: Ad for "${evt.name}" must be ready. Ad goes live in 10 days.`,
         });
       }
@@ -67,6 +75,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
         const aDays = daysUntil(aDate);
         list.push({
           type: "ad_start", event: evt, date: aDate, daysUntil: aDays, eventDate: evt.date,
+          dueDate: aDate, dueDays: aDays,
           message: `Start running ads for "${evt.name}". Event in ${adLead} days.`,
         });
       }
@@ -74,36 +83,48 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
       // Event Day always shows — the event is still happening regardless of workflow.
       list.push({
         type: "event_day", event: evt, date: evt.date, daysUntil: eventDays, eventDate: evt.date,
+        dueDate: evt.date, dueDays: eventDays,
         message: `"${evt.name}" is ${eventDays === 0 ? "TODAY" : eventDays === 1 ? "TOMORROW" : `in ${eventDays} days`}`,
       });
     });
 
-    list.sort((a, b) => a.date.localeCompare(b.date));
+    // A window-style reminder that has already opened but is not yet due is
+    // live work, so it belongs on today's row — left on its open date it would
+    // sit under a past divider and read as late. Deadline-style reminders have
+    // date === dueDate, so isActive is always false for them.
+    list.forEach(r => {
+      r.isActive = r.daysUntil <= 0 && r.dueDays > 0;
+      r.timelineDate = r.isActive && r.date < todayStr ? todayStr : r.date;
+    });
+
+    list.sort((a, b) => a.timelineDate.localeCompare(b.timelineDate) || a.dueDays - b.dueDays);
     return list;
   }, [allEvents, workflowData]);
 
   const filtered = useMemo(() => {
     return reminders.filter(r => {
-      if (filter === "all_upcoming") return r.daysUntil >= -2 && r.daysUntil <= 30;
-      if (filter === "today") return r.daysUntil === 0;
-      if (filter === "this_week") return r.daysUntil >= 0 && r.daysUntil <= 7;
-      if (filter === "overdue") return r.daysUntil < 0;
-      if (filter === "creative") return r.type === "creative_deadline" && r.daysUntil >= -2 && r.daysUntil <= 30;
-      if (filter === "ads") return r.type === "ad_start" && r.daysUntil >= -2 && r.daysUntil <= 30;
-      if (filter === "stories") return r.type === "story_reminder" && r.daysUntil >= -2 && r.daysUntil <= 30;
+      // Filter on dueDays, not daysUntil — an open prep window must stay visible
+      // until its due date passes, not drop out days before the event.
+      if (filter === "all_upcoming") return r.dueDays >= -2 && r.dueDays <= 30;
+      if (filter === "today") return r.dueDays === 0;
+      if (filter === "this_week") return r.dueDays >= 0 && r.dueDays <= 7;
+      if (filter === "overdue") return r.dueDays < 0;
+      if (filter === "creative") return r.type === "creative_deadline" && r.dueDays >= -2 && r.dueDays <= 30;
+      if (filter === "ads") return r.type === "ad_start" && r.dueDays >= -2 && r.dueDays <= 30;
+      if (filter === "stories") return r.type === "story_reminder" && r.dueDays >= -2 && r.dueDays <= 30;
       return true;
     });
   }, [reminders, filter]);
 
-  const todayCount = reminders.filter(r => r.daysUntil === 0).length;
-  const weekCount = reminders.filter(r => r.daysUntil >= 0 && r.daysUntil <= 7).length;
-  const overdueCount = reminders.filter(r => r.daysUntil < 0 && r.daysUntil >= -3).length;
+  const todayCount = reminders.filter(r => r.dueDays === 0).length;
+  const weekCount = reminders.filter(r => r.dueDays >= 0 && r.dueDays <= 7).length;
+  const overdueCount = reminders.filter(r => r.dueDays < 0 && r.dueDays >= -3).length;
 
   const grouped = useMemo(() => {
     const g = {};
     filtered.forEach(r => {
-      if (!g[r.date]) g[r.date] = [];
-      g[r.date].push(r);
+      if (!g[r.timelineDate]) g[r.timelineDate] = [];
+      g[r.timelineDate].push(r);
     });
     return g;
   }, [filtered]);
@@ -310,7 +331,7 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
 
             {items.map((r, ri) => {
               const rt = REMINDER_TYPES[r.type];
-              const cardClass = `reminder-card ${r.daysUntil === 0 ? "today-card" : ""} ${r.daysUntil < 0 ? "overdue-card" : ""} ${r.daysUntil >= 0 && r.daysUntil <= 2 ? "urgent" : ""}`;
+              const cardClass = `reminder-card ${r.dueDays === 0 ? "today-card" : ""} ${r.dueDays < 0 ? "overdue-card" : ""} ${r.dueDays >= 0 && r.dueDays <= 2 ? "urgent" : ""}`;
 
               return (
                 <div key={ri} className={cardClass} onClick={() => openDetail(r)}>
@@ -322,9 +343,10 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: rt.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{rt.label}</span>
-                        {r.daysUntil === 0 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#92400e", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
-                        {r.daysUntil < 0 && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.1)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
-                        {r.daysUntil === 1 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TOMORROW</span>}
+                        {r.dueDays === 0 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#92400e", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TODAY</span>}
+                        {r.dueDays < 0 && <span style={{ fontSize: 9, background: "rgba(239,83,80,0.1)", color: "#EF5350", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>OVERDUE</span>}
+                        {r.dueDays === 1 && <span style={{ fontSize: 9, background: "rgba(255,179,0,0.12)", color: "#FFB300", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>TOMORROW</span>}
+                        {r.isActive && r.dueDays > 1 && <span style={{ fontSize: 9, background: "rgba(67,160,71,0.1)", color: "#43A047", padding: "2px 8px", borderRadius: 5, fontWeight: 700 }}>DUE IN {r.dueDays} DAYS</span>}
                       </div>
                       <div style={{ fontFamily: "'Sora'", fontSize: mob ? 13 : 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 }}>
                         {r.event.name}
@@ -332,6 +354,11 @@ export default function RemindersView({ allEvents, data, workflowData, updateEve
                       <div style={{ fontSize: mob ? 11 : 12, color: "#6b7280", lineHeight: 1.5, marginBottom: 4 }}>
                         {r.message}
                       </div>
+                      {r.isActive && (
+                        <div style={{ fontSize: mob ? 9 : 10, color: "#9ca3af", marginBottom: 4 }}>
+                          Prep window open since {formatDate(r.windowStart || r.date)} · due {formatDate(r.dueDate)}
+                        </div>
+                      )}
                       {(r.event.pages || []).length > 0 && (
                         <div className="r-pages">
                           {r.event.pages.map(pid => {
